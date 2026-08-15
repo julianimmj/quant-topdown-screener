@@ -113,31 +113,43 @@ def analyze_sectors(
             if rs.empty:
                 continue
 
-            # RS > SMA50(RS)
-            sma50_rs = rs.rolling(window=50, min_periods=50).mean()
-            rs_above = bool(rs.iloc[-1] > sma50_rs.iloc[-1]) if len(sma50_rs.dropna()) > 0 else False
+            # ── 1. Tendência Estrutural do RS Ratio (35% peso) ──
+            sma50_rs = rs.rolling(window=50, min_periods=20).mean()
+            sma200_rs = rs.rolling(window=200, min_periods=50).mean()
 
-            # ROC do RS Ratio
+            last_rs = float(rs.iloc[-1])
+            last_sma50 = float(sma50_rs.iloc[-1]) if len(sma50_rs.dropna()) > 0 else last_rs
+            last_sma200 = float(sma200_rs.iloc[-1]) if len(sma200_rs.dropna()) > 0 else last_sma50
+
+            rs_above = bool(last_rs > last_sma50)
+
+            # Distância contínua para as médias (eliminando saltos binários de 40 pontos)
+            dist_50 = ((last_rs - last_sma50) / last_sma50 * 100) if last_sma50 > 0 else 0.0
+            dist_200 = ((last_rs - last_sma200) / last_sma200 * 100) if last_sma200 > 0 else 0.0
+
+            # Mapeamento contínuo centrado em 50 (Neutro):
+            # dist_50 ±6% -> [0, 100]; dist_200 ±12% -> [0, 100]
+            score_trend_50 = float(np.clip(50.0 + (dist_50 / 6.0) * 50.0, 0, 100))
+            score_trend_200 = float(np.clip(50.0 + (dist_200 / 12.0) * 50.0, 0, 100))
+            score_trend = 0.65 * score_trend_50 + 0.35 * score_trend_200
+
+            # ── 2. Momentum Relativo de Médio Prazo (ROC 63d, 40% peso) ──
             roc63 = compute_roc(rs, 63)
+            # Alpha de 1 trimestre: ±15% mapeado continuamente para [0, 100] centrado em 50
+            score_roc63 = float(np.clip(50.0 + (roc63 / 15.0) * 50.0, 0, 100))
+
+            # ── 3. Momentum Relativo de Longo Prazo (ROC 126d, 25% peso) ──
             roc126 = compute_roc(rs, 126)
+            # Alpha de 2 trimestres: ±25% mapeado continuamente para [0, 100] centrado em 50
+            score_roc126 = float(np.clip(50.0 + (roc126 / 25.0) * 50.0, 0, 100))
 
-            # Score bruto (combinação de RS trend + momentum)
-            raw_score = 0.0
-            # RS acima da SMA50 = 40 pontos
-            if rs_above:
-                raw_score += 40.0
-            # ROC 63 positivo → até 35 pontos (escala linear)
-            roc63_score = np.clip(roc63 / 20.0 * 35.0, -10, 35)
-            raw_score += roc63_score
-            # ROC 126 positivo → até 25 pontos
-            roc126_score = np.clip(roc126 / 30.0 * 25.0, -10, 25)
-            raw_score += roc126_score
-
+            # ── 4. Score Setorial Ponderado Contínuo ──
+            raw_score = 0.35 * score_trend + 0.40 * score_roc63 + 0.25 * score_roc126
             raw_score = float(np.clip(raw_score, 0, 100))
 
             sector_rs = SectorRS(
                 sector=sector_name,
-                rs_ratio_current=float(rs.iloc[-1]),
+                rs_ratio_current=last_rs,
                 rs_ratio_series=rs,
                 rs_above_sma50=rs_above,
                 roc_63=roc63,
