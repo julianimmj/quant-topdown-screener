@@ -290,40 +290,52 @@ def render_score_decomposition(score: FinalScore) -> None:
     st.markdown(f"### 🔍 Decomposição Quantitativa — `{score.ticker}`")
     st.markdown(f"**Setor Econômico:** {score.sector} | **Último Fechamento:** R$ {score.price:.2f}")
 
-    # TQS gauge
+    # TQS gauge perfeitamente centralizado
     fig_gauge = go.Figure(go.Indicator(
         mode="gauge+number",
         value=score.tqs,
-        domain=dict(x=[0, 1], y=[0, 1]),
-        title=dict(text="Trend Quality Score (TQS)", font=dict(size=14, color="#8892B0")),
-        number=dict(font=dict(size=36, color=_tqs_color(score.tqs))),
+        domain=dict(x=[0.05, 0.95], y=[0.0, 1.0]),
+        title=dict(
+            text="<b>Trend Quality Score (TQS)</b>",
+            font=dict(size=15, color="#8892B0"),
+            align="center",
+        ),
+        number=dict(
+            font=dict(size=38, color=_tqs_color(score.tqs), family="Arial Black, sans-serif"),
+        ),
         gauge=dict(
-            axis=dict(range=[0, 100], tickwidth=1, tickcolor="#666"),
-            bar=dict(color=_tqs_color(score.tqs)),
+            axis=dict(
+                range=[0, 100],
+                tickwidth=1,
+                tickcolor="#8892B0",
+                tickvals=[0, 25, 50, 75, 100],
+                ticktext=["0", "25", "50", "75", "100"],
+            ),
+            bar=dict(color=_tqs_color(score.tqs), thickness=0.28),
             bgcolor="#151922",
             borderwidth=2,
             bordercolor="#2A303C",
             steps=[
-                dict(range=[0, 25], color="rgba(255, 68, 68, 0.13)"),
-                dict(range=[25, 50], color="rgba(255, 215, 0, 0.08)"),
-                dict(range=[50, 75], color="rgba(0, 212, 170, 0.08)"),
-                dict(range=[75, 100], color="rgba(0, 212, 170, 0.15)"),
+                dict(range=[0, 25], color="rgba(255, 68, 68, 0.15)"),
+                dict(range=[25, 50], color="rgba(255, 215, 0, 0.10)"),
+                dict(range=[50, 75], color="rgba(0, 212, 170, 0.10)"),
+                dict(range=[75, 100], color="rgba(0, 212, 170, 0.20)"),
             ],
-            threshold=dict(line=dict(color="#FFF", width=2), thickness=0.75, value=score.tqs),
+            threshold=dict(line=dict(color="#FFFFFF", width=3), thickness=0.8, value=score.tqs),
         ),
     ))
     fig_gauge.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
-        height=210,
-        margin=dict(l=20, r=20, t=20, b=10),
+        height=220,
+        margin=dict(l=25, r=25, t=35, b=15),
     )
     st.plotly_chart(fig_gauge, use_container_width=True, key=f"gauge_{score.ticker}")
 
-    # Sub-scores em barras horizontais
-    categories = ["Macro", "Setor RS", "Trend", "Trigger"]
-    values = [score.macro_score, score.sector_score, score.trend_score, score.trigger_score]
-    weights = [0.20, 0.20, 0.45, 0.15]
+    # Sub-scores em barras horizontais perfeitamente alinhadas e centralizadas
+    categories = ["Trigger", "Trend", "Setor RS", "Macro"]
+    values = [score.trigger_score, score.trend_score, score.sector_score, score.macro_score]
+    weights = [0.15, 0.45, 0.20, 0.20]
     weighted_vals = [v * w for v, w in zip(values, weights)]
     colors = [_tqs_color(v) for v in values]
 
@@ -332,18 +344,28 @@ def render_score_decomposition(score: FinalScore) -> None:
         y=categories,
         x=values,
         orientation="h",
-        marker_color=colors,
-        text=[f"{v:.0f} pts (×{w:.0%} = {wv:.1f})" for v, w, wv in zip(values, weights, weighted_vals)],
-        textposition="inside",
+        marker=dict(
+            color=colors,
+            line=dict(color="rgba(255,255,255,0.15)", width=1),
+        ),
+        text=[f"<b>{v:.0f} pts</b> (×{w:.0%} = {wv:.1f})" for v, w, wv in zip(values, weights, weighted_vals)],
+        textposition="auto",
+        insidetextanchor="middle",
         textfont=dict(color="white", size=11, family="sans-serif"),
     ))
     fig_bar.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=180,
-        margin=dict(l=70, r=20, t=10, b=10),
-        xaxis=dict(range=[0, 100], title="Pontuação (0-100)"),
+        height=195,
+        margin=dict(l=75, r=25, t=10, b=25),
+        xaxis=dict(
+            range=[0, 100],
+            dtick=25,
+            gridcolor="rgba(255,255,255,0.06)",
+            title=dict(text="Escala de Pontuação (0 - 100)", font=dict(size=11, color="#8892B0")),
+        ),
+        yaxis=dict(gridcolor="transparent"),
         showlegend=False,
     )
     st.plotly_chart(fig_bar, use_container_width=True, key=f"bar_{score.ticker}")
