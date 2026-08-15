@@ -345,43 +345,64 @@ def render_score_decomposition(score: FinalScore) -> None:
     )
     st.plotly_chart(fig_gauge, use_container_width=True, key=f"gauge_{score.ticker}")
 
-    # Sub-scores em barras horizontais perfeitamente alinhadas
-    categories = ["Trigger", "Trend", "Setor RS", "Macro"]
-    values = [score.trigger_score, score.trend_score, score.sector_score, score.macro_score]
-    weights = [0.15, 0.45, 0.20, 0.20]
-    weighted_vals = [v * w for v, w in zip(values, weights)]
-    colors = [_tqs_color(v) for v in values]
+    # Sub-scores perfeitamente centralizados e simétricos em card responsivo
+    macro_col = _tqs_color(score.macro_score)
+    sec_col = _tqs_color(score.sector_score)
+    trend_col = _tqs_color(score.trend_score)
+    trig_col = _tqs_color(score.trigger_score)
 
-    fig_bar = go.Figure()
-    fig_bar.add_trace(go.Bar(
-        y=categories,
-        x=values,
-        orientation="h",
-        marker=dict(
-            color=colors,
-            line=dict(color="rgba(255,255,255,0.15)", width=1),
-        ),
-        text=[f"<b>{v:.0f} pts</b> (×{w:.0%} = {wv:.1f})" for v, w, wv in zip(values, weights, weighted_vals)],
-        textposition="auto",
-        insidetextanchor="middle",
-        textfont=dict(color="white", size=11, family="sans-serif"),
-    ))
-    fig_bar.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="#0E1117",
-        plot_bgcolor="#0E1117",
-        height=190,
-        margin=dict(l=70, r=20, t=5, b=25),
-        xaxis=dict(
-            range=[0, 100],
-            dtick=25,
-            gridcolor="rgba(255,255,255,0.06)",
-            title=dict(text="Escala de Pontuação (0 - 100)", font=dict(size=11, color="#8892B0")),
-        ),
-        yaxis=dict(showgrid=False),
-        showlegend=False,
-    )
-    st.plotly_chart(fig_bar, use_container_width=True, key=f"bar_{score.ticker}")
+    subscores_card_html = f"""
+    <div style="background: #131720; border: 1px solid #232936; border-radius: 10px; padding: 14px 16px; margin-top: 10px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+        <div style="font-size: 0.76rem; color: #8892B0; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 12px; border-bottom: 1px solid #1E2433; padding-bottom: 6px;">
+            Decomposição Ponderada dos Sub-Scores
+        </div>
+        
+        <!-- Macro -->
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 1 • Macro (20%)</span>
+                <span style="color: {macro_col}; font-weight: 700;">{score.macro_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×20% = {score.macro_score * 0.20:.1f})</span></span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
+                <div style="width: {score.macro_score}%; height: 100%; background: linear-gradient(90deg, {macro_col}80, {macro_col}); border-radius: 4px;"></div>
+            </div>
+        </div>
+        
+        <!-- Setor RS -->
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 2 • Setor RS (20%)</span>
+                <span style="color: {sec_col}; font-weight: 700;">{score.sector_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×20% = {score.sector_score * 0.20:.1f})</span></span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
+                <div style="width: {score.sector_score}%; height: 100%; background: linear-gradient(90deg, {sec_col}80, {sec_col}); border-radius: 4px;"></div>
+            </div>
+        </div>
+        
+        <!-- Trend -->
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 3 • Trend Quality (45%)</span>
+                <span style="color: {trend_col}; font-weight: 700;">{score.trend_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×45% = {score.trend_score * 0.45:.1f})</span></span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
+                <div style="width: {score.trend_score}%; height: 100%; background: linear-gradient(90deg, {trend_col}80, {trend_col}); border-radius: 4px;"></div>
+            </div>
+        </div>
+        
+        <!-- Trigger -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 4 • Trigger (15%)</span>
+                <span style="color: {trig_col}; font-weight: 700;">{score.trigger_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×15% = {score.trigger_score * 0.15:.1f})</span></span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
+                <div style="width: {score.trigger_score}%; height: 100%; background: linear-gradient(90deg, {trig_col}80, {trig_col}); border-radius: 4px;"></div>
+            </div>
+        </div>
+    </div>
+    """
+    st_html(subscores_card_html)
 
     # Detalhamento do Trend Engine em grid responsivo auto-fit
     st.markdown("#### 📐 Nível 3 • Trend Engine (Sub-Componentes)")
