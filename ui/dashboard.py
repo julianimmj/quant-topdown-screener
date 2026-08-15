@@ -516,25 +516,44 @@ def render_sector_heatmap(
 
     st_html(sec_table_html)
 
-    # Heatmap visual
+    # Heatmap visual com paleta institucional de alto contraste (sem conflito laranja/vermelho)
     if len(sectors_df) > 1:
+        # Escala com separação nítida: Vinho/Vermelho -> Azul Neutro -> Verde Esmeralda
+        treemap_colorscale = [
+            (0.00, "#7A0026"),  # Muito Defensivo (Vinho profundo)
+            (0.30, "#C1121F"),  # Defensivo (Vermelho nítido)
+            (0.48, "#3D5A80"),  # Neutro (Azul Ardósia - elimina o barro laranja)
+            (0.65, "#00A896"),  # Liderança Moderada (Verde-Azulado)
+            (1.00, "#00D4AA"),  # Liderança Forte (Verde Esmeralda)
+        ]
+
         fig = px.treemap(
             sectors_df,
             path=["Setor"],
             values="Ativos",
             color="RS Score",
-            color_continuous_scale=["#FF4444", "#FFD700", "#00D4AA"],
-            color_continuous_midpoint=50,
+            range_color=[0, 100],
+            color_continuous_scale=treemap_colorscale,
             title="Distribuição & Força Relativa Setorial (RS Score)",
         )
         fig.update_layout(
             template="plotly_dark",
             paper_bgcolor="#0E1117",
-            height=380,
+            height=400,
             margin=dict(l=10, r=10, t=45, b=10),
+            coloraxis_colorbar=dict(
+                title=dict(text="RS Score", font=dict(size=12, color="#8892B0")),
+                tickvals=[0, 25, 50, 75, 100],
+                ticktext=["0 (Fraco)", "25", "50 (Neutro)", "75", "100 (Líder)"],
+                thickness=14,
+                len=0.85,
+            ),
         )
         fig.update_traces(
             textinfo="label+value+text",
-            texttemplate="<b>%{label}</b><br>RS: %{color:.0f}<br>Ativos: %{value}",
+            texttemplate="<b style='font-size:15px;'>%{label}</b><br><span style='font-size:13px; font-weight:700;'>RS: %{color:.1f}</span><br><span style='font-size:11.5px; opacity:0.9;'>%{value} ativos</span>",
+            marker=dict(
+                line=dict(width=1.5, color="#161B26"),
+            ),
         )
         st.plotly_chart(fig, use_container_width=True, key="sector_treemap")

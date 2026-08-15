@@ -434,18 +434,24 @@ with tab2:
     if not final_scores:
         st.info("Nenhum ativo disponível para análise com os filtros atuais.")
     else:
-        # Seletor de ativo
-        ticker_options = [f"{s.ticker} — TQS: {s.tqs:.1f} ({s.sector})" for s in final_scores]
+        # Ordenação estrita por TQS decrescente (mesma ordem da tabela de Ranking)
+        final_scores_sorted = sorted(final_scores, key=lambda s: s.tqs, reverse=True)
+
+        # Seletor com posição exata do ranking (#01, #02, etc.)
+        ticker_options = [
+            f"#{i:02d} | {s.ticker} — TQS: {s.tqs:.1f} ({s.sector})"
+            for i, s in enumerate(final_scores_sorted, 1)
+        ]
         selected_label = st.selectbox(
-            "Selecione um ativo para análise detalhada:",
+            "Selecione um ativo para análise detalhada (ordenado por Ranking TQS):",
             options=ticker_options,
             index=0,
             key="deepdive_select",
         )
 
-        # Extrair ticker do label
-        selected_ticker = selected_label.split(" — ")[0]
-        selected_score = next((s for s in final_scores if s.ticker == selected_ticker), None)
+        # Extrair ticker do label formatado
+        selected_ticker = selected_label.split(" | ")[1].split(" — ")[0].strip()
+        selected_score = next((s for s in final_scores_sorted if s.ticker == selected_ticker), None)
         selected_trend = trend_results.get(selected_ticker)
 
         if selected_score and selected_ticker in universe_data:
