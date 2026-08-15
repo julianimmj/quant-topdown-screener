@@ -44,7 +44,6 @@ IBOV_UNIVERSE: dict[str, str] = {
     "BRKM5.SA": "Materiais Básicos",
     "CMIN3.SA": "Materiais Básicos",
     "DXCO3.SA": "Materiais Básicos",
-    "CBAV3.SA": "Materiais Básicos",
     "UNIP6.SA": "Materiais Básicos",
 
     # ── Petróleo, Gás & Biocombustíveis ──
