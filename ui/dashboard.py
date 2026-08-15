@@ -492,7 +492,14 @@ def render_sector_heatmap(
         bg_col = "#111520" if i % 2 == 0 else "#191F30"
         rs_val = float(s["RS Score"])
         rs_col = _tqs_color(rs_val)
-        border_left = "border-left: 4px solid #00D4AA;" if rs_val >= 60 else ("border-left: 4px solid #FFD700;" if rs_val >= 40 else "border-left: 4px solid #FF4444;")
+        if rs_val >= 60:
+            border_left = "border-left: 4px solid #00D4AA;"
+        elif rs_val >= 45:
+            border_left = "border-left: 4px solid #FFD700;"
+        elif rs_val >= 30:
+            border_left = "border-left: 4px solid #FF8C00;"
+        else:
+            border_left = "border-left: 4px solid #FF4444;"
 
         q_badge = f'<span style="background: rgba(0, 212, 170, 0.15); color: #00D4AA; padding: 2px 8px; border-radius: 6px; font-weight: 700;">{s["Quartil"]}</span>' if "Q1" in str(s["Quartil"]) else f'<span style="color: #BBB;">{s["Quartil"]}</span>'
         sma_badge = '<span style="color: #00D4AA; font-weight: 700;">✅ Sim</span>' if "✅" in str(s["RS > SMA50"]) else '<span style="color: #FF6B6B;">❌ Não</span>'

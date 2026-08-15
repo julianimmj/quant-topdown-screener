@@ -527,11 +527,20 @@ with tab3:
             if not stocks:
                 continue
 
-            rs_score = sector_score_map.get(sector_name, 0)
-            emoji = "🟢" if rs_score >= 60 else "🟡" if rs_score >= 40 else "🔴"
+            rs_score = sector_score_map.get(sector_name, 0.0)
+
+            # Sincronização precisa com a escala de Força Relativa Setorial
+            if rs_score >= 60:
+                emoji = "🟢"  # Líder / Forte
+            elif rs_score >= 45:
+                emoji = "🟡"  # Neutro / Estável (em torno do midpoint 50)
+            elif rs_score >= 30:
+                emoji = "🟠"  # Defensivo Moderado (faixa de transição)
+            else:
+                emoji = "🔴"  # Fraco / Fundo
 
             with st.expander(
-                f"{emoji} {sector_name} — RS Score: {rs_score:.0f}/100 | {len(stocks)} ativos",
+                f"{emoji} {sector_name} — RS Score: {rs_score:.1f}/100 | {len(stocks)} ativos",
                 expanded=False,
             ):
                 sector_df = scores_to_dataframe(sorted(stocks, key=lambda s: s.tqs, reverse=True))
