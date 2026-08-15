@@ -290,16 +290,19 @@ def render_score_decomposition(score: FinalScore) -> None:
     st.markdown(f"### 🔍 Decomposição Quantitativa — `{score.ticker}`")
     st.markdown(f"**Setor Econômico:** {score.sector} | **Último Fechamento:** R$ {score.price:.2f}")
 
-    # TQS gauge perfeitamente centralizado
+    # TQS gauge perfeitamente centralizado com título HTML dedicado
+    st_html("""
+    <div style="text-align: center; margin-top: 10px; margin-bottom: -5px;">
+        <span style="color: #8892B0; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+            Trend Quality Score (TQS)
+        </span>
+    </div>
+    """)
+
     fig_gauge = go.Figure(go.Indicator(
         mode="gauge+number",
         value=score.tqs,
-        domain=dict(x=[0.05, 0.95], y=[0.0, 1.0]),
-        title=dict(
-            text="<b>Trend Quality Score (TQS)</b>",
-            font=dict(size=15, color="#8892B0"),
-            align="center",
-        ),
+        domain=dict(x=[0.0, 1.0], y=[0.0, 1.0]),
         number=dict(
             font=dict(size=38, color=_tqs_color(score.tqs), family="Arial Black, sans-serif"),
         ),
@@ -327,12 +330,12 @@ def render_score_decomposition(score: FinalScore) -> None:
     fig_gauge.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
-        height=220,
-        margin=dict(l=25, r=25, t=35, b=15),
+        height=180,
+        margin=dict(l=15, r=15, t=10, b=10),
     )
     st.plotly_chart(fig_gauge, use_container_width=True, key=f"gauge_{score.ticker}")
 
-    # Sub-scores em barras horizontais perfeitamente alinhadas e centralizadas
+    # Sub-scores em barras horizontais perfeitamente alinhadas
     categories = ["Trigger", "Trend", "Setor RS", "Macro"]
     values = [score.trigger_score, score.trend_score, score.sector_score, score.macro_score]
     weights = [0.15, 0.45, 0.20, 0.20]
@@ -357,8 +360,8 @@ def render_score_decomposition(score: FinalScore) -> None:
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=195,
-        margin=dict(l=75, r=25, t=10, b=25),
+        height=190,
+        margin=dict(l=70, r=20, t=5, b=25),
         xaxis=dict(
             range=[0, 100],
             dtick=25,
