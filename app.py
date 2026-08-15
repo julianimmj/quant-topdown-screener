@@ -461,6 +461,9 @@ with tab2:
                     key="lookback_slider",
                 )
 
+                # Título limpo acima do gráfico (eliminando sobreposição na legenda)
+                st.markdown(f"#### 🕯️ **{selected_ticker}** — Candlestick & Médias Móveis")
+
                 # Chart principal
                 if selected_trend:
                     render_deep_dive_chart(

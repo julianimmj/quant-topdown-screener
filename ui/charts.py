@@ -26,31 +26,15 @@ def render_deep_dive_chart(
     benchmark_close: pd.Series | None = None,
     lookback_days: int = 252,
 ) -> None:
-    """Renderiza gráfico completo de Deep Dive para um ativo sem sobreposição de títulos.
-
-    Layout:
-    - Row 1: Candlestick + EMAs (height 55%)
-    - Row 2: Volume (height 12%)
-    - Row 3: RS vs IBOV (height 15%)
-    - Row 4: ADX + DI (height 18%)
-
-    Args:
-        ticker: Ticker do ativo.
-        df: DataFrame OHLCV do ativo.
-        trend: TrendResult com séries de EMAs e ADX.
-        benchmark_close: Série Close do benchmark para RS.
-        lookback_days: Dias para exibição (padrão 252 = 1 ano).
-    """
-    # Limitar período de exibição
+    """Renderiza gráfico completo de Deep Dive para um ativo com legendas limpas e sem sobreposição."""
     df_plot = df.tail(lookback_days).copy()
 
     has_rs = benchmark_close is not None and len(benchmark_close) > 50
     n_rows = 4 if has_rs else 3
     row_heights = [0.55, 0.12, 0.15, 0.18] if has_rs else [0.60, 0.14, 0.26]
 
-    # Deixar o título do primeiro subplot vazio para o título principal da figura ocupar a barra superior sem colidir com a legenda
     subplot_titles = [
-        "",  # Espaço reservado para o título global + legenda
+        "",  # Espaço limpo para a legenda das médias móveis
         "Volume Negociado",
     ]
     if has_rs:
@@ -220,28 +204,20 @@ def render_deep_dive_chart(
         annotation_position="top left",
     )
 
-    # ── Layout Global com Espaçamento Limpo (Sem Sobreposição) ──
+    # ── Layout Global com Espaçamento Limpo (Título gerenciado no Streamlit) ──
     fig.update_layout(
-        title=dict(
-            text=f"<b>{ticker}</b> • Estrutura Técnica",
-            font=dict(size=15, color="#00D4AA"),
-            x=0.01,
-            y=0.99,
-            xanchor="left",
-            yanchor="top",
-        ),
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=820,
-        margin=dict(l=55, r=25, t=75, b=35),
+        height=800,
+        margin=dict(l=55, r=25, t=35, b=35),
         legend=dict(
             orientation="h",
-            yanchor="top",
-            y=1.08,
+            yanchor="bottom",
+            y=1.02,
             xanchor="right",
             x=1.0,
-            font=dict(size=10.5),
+            font=dict(size=11),
             bgcolor="rgba(14, 17, 23, 0.85)",
             bordercolor="rgba(255, 255, 255, 0.12)",
             borderwidth=1,
@@ -304,8 +280,8 @@ def render_rsi_chart(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=240,
-        margin=dict(l=55, r=25, t=40, b=30),
+        height=230,
+        margin=dict(l=55, r=25, t=35, b=30),
         yaxis=dict(range=[0, 100], title="RSI"),
         xaxis=dict(title=""),
         showlegend=False,
@@ -345,8 +321,8 @@ def render_tqs_distribution(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=290,
-        margin=dict(l=55, r=25, t=50, b=35),
+        height=280,
+        margin=dict(l=55, r=25, t=45, b=35),
         xaxis=dict(title="Trend Quality Score (TQS)", range=[0, 100]),
         yaxis=dict(title="Nº de Ativos"),
         showlegend=False,
