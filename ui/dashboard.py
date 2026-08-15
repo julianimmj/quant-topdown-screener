@@ -518,13 +518,14 @@ def render_sector_heatmap(
 
     # Heatmap visual com paleta institucional de alto contraste (sem conflito laranja/vermelho)
     if len(sectors_df) > 1:
-        # Escala com separação nítida: Vinho/Vermelho -> Azul Neutro -> Verde Esmeralda
+        # Escala clássica (Vermelho -> Laranja -> Âmbar/Amarelo -> Verde) com alto contraste de luminosidade
         treemap_colorscale = [
-            (0.00, "#7A0026"),  # Muito Defensivo (Vinho profundo)
-            (0.30, "#C1121F"),  # Defensivo (Vermelho nítido)
-            (0.48, "#3D5A80"),  # Neutro (Azul Ardósia - elimina o barro laranja)
-            (0.65, "#00A896"),  # Liderança Moderada (Verde-Azulado)
-            (1.00, "#00D4AA"),  # Liderança Forte (Verde Esmeralda)
+            (0.00, "#8B0000"),  # Vermelho escuro profundo
+            (0.25, "#C9182B"),  # Vermelho vivo
+            (0.42, "#FF5A00"),  # Laranja elétrico nítido
+            (0.55, "#FFB703"),  # Âmbar dourado luminoso
+            (0.75, "#2EC4B6"),  # Verde-água
+            (1.00, "#00D4AA"),  # Verde esmeralda institucional
         ]
 
         fig = px.treemap(
