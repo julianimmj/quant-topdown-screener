@@ -300,7 +300,7 @@ def render_score_decomposition(score: FinalScore) -> None:
     st.markdown(f"### 🔍 Decomposição Quantitativa — `{score.ticker}`")
     st.markdown(f"**Setor Econômico:** {score.sector} | **Último Fechamento:** R$ {score.price:.2f}")
 
-    # TQS gauge perfeitamente centralizado com título HTML dedicado
+    # Cabeçalho do Gauge TQS
     st_html("""
     <div style="text-align: center; margin-top: 10px; margin-bottom: -5px;">
         <span style="color: #8892B0; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -309,13 +309,13 @@ def render_score_decomposition(score: FinalScore) -> None:
     </div>
     """)
 
+    # Manômetro semicircular limpo (apenas a escala gráfica do arco)
+    tqs_color_val = _tqs_color(score.tqs)
     fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
+        mode="gauge",
         value=score.tqs,
-        domain=dict(x=[0.0, 1.0], y=[0.0, 1.0]),
-        number=dict(
-            font=dict(size=38, color=_tqs_color(score.tqs), family="Arial Black, sans-serif"),
-        ),
+        align="center",
+        domain=dict(x=[0.05, 0.95], y=[0.0, 1.0]),
         gauge=dict(
             axis=dict(
                 range=[0, 100],
@@ -324,7 +324,7 @@ def render_score_decomposition(score: FinalScore) -> None:
                 tickvals=[0, 25, 50, 75, 100],
                 ticktext=["0", "25", "50", "75", "100"],
             ),
-            bar=dict(color=_tqs_color(score.tqs), thickness=0.28),
+            bar=dict(color=tqs_color_val, thickness=0.30),
             bgcolor="#151922",
             borderwidth=2,
             bordercolor="#2A303C",
@@ -340,10 +340,30 @@ def render_score_decomposition(score: FinalScore) -> None:
     fig_gauge.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
-        height=180,
-        margin=dict(l=15, r=15, t=10, b=10),
+        height=140,
+        margin=dict(l=15, r=15, t=10, b=0),
     )
     st.plotly_chart(fig_gauge, use_container_width=True, key=f"gauge_{score.ticker}")
+
+    # Caixa destacada com o número e a pontuação do ativo perfeitamente centralizada
+    st_html(f"""
+    <div style="
+        background: linear-gradient(135deg, #131720 0%, #1c222e 100%);
+        border: 1px solid {tqs_color_val}55;
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-align: center;
+        margin: 4px 0 14px 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    ">
+        <span style="color: #8892B0; font-size: 0.78rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.6px; display: block; margin-bottom: 2px;">
+            Pontuação TQS Consolidada
+        </span>
+        <div style="color: {tqs_color_val}; font-size: 2.2rem; font-weight: 900; line-height: 1.1;">
+            {score.tqs:.1f} <span style="font-size: 1.05rem; color: #8892B0; font-weight: 600;">/ 100</span>
+        </div>
+    </div>
+    """)
 
     # Sub-scores perfeitamente centralizados e simétricos em card responsivo
     macro_col = _tqs_color(score.macro_score)
