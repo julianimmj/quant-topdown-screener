@@ -365,7 +365,7 @@ def render_score_decomposition(score: FinalScore) -> None:
             gridcolor="rgba(255,255,255,0.06)",
             title=dict(text="Escala de Pontuação (0 - 100)", font=dict(size=11, color="#8892B0")),
         ),
-        yaxis=dict(gridcolor="transparent"),
+        yaxis=dict(showgrid=False),
         showlegend=False,
     )
     st.plotly_chart(fig_bar, use_container_width=True, key=f"bar_{score.ticker}")
