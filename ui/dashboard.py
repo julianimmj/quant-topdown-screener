@@ -90,19 +90,24 @@ def render_macro_kpis(
             help="Classificação algorítmica da postura operacional sugerida para estratégias direcionais.",
         )
 
-    # Correlações
+    # Correlações responsivas em grid auto-fit
     if correlations:
         st.markdown("##### 🔗 Correlações Rolantes (63 dias)")
-        corr_cols = st.columns(min(len(correlations), 4))
-        for i, (name, val) in enumerate(correlations.items()):
-            with corr_cols[i % len(corr_cols)]:
-                color = "#00D4AA" if val > 0 else "#FF4444"
-                st_html(f"""
-                <div style="text-align: center; padding: 8px; background: #1a1d2380; border-radius: 8px; border: 1px solid {color}30;">
-                    <span style="color: #888; font-size: 0.8em;">{name}</span><br>
-                    <span style="color: {color}; font-size: 1.2em; font-weight: 700;">{val:+.2f}</span>
-                </div>
-                """)
+        corr_items_html = []
+        for name, val in correlations.items():
+            color = "#00D4AA" if val > 0 else "#FF4444"
+            corr_items_html.append(f"""
+            <div style="text-align: center; padding: 10px 6px; background: rgba(26, 29, 35, 0.7); border-radius: 8px; border: 1px solid {color}30;">
+                <span style="color: #8892B0; font-size: 0.78rem; display: block; white-space: nowrap;">{name}</span>
+                <span style="color: {color}; font-size: 1.15rem; font-weight: 700;">{val:+.2f}</span>
+            </div>
+            """)
+
+        st_html(f"""
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 6px; margin-bottom: 12px;">
+            {''.join(corr_items_html)}
+        </div>
+        """)
 
 
 def render_breadth_chart(
@@ -256,29 +261,34 @@ def render_ranking_table(
         rows_html.append(row_html)
 
     table_html = f"""
-    <div style="overflow-x: auto; border: 1px solid #232936; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-top: 10px; margin-bottom: 20px;">
-        <table style="width: 100%; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.88rem;">
-            <thead>
-                <tr style="background-color: #1A2030; border-bottom: 2px solid #00D4AA; color: #8892B0; text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.8px;">
-                    <th style="padding: 12px 8px; text-align: center;">Rank</th>
-                    <th style="padding: 12px 10px; text-align: left;">Ticker</th>
-                    <th style="padding: 12px 10px; text-align: left;">Setor</th>
-                    <th style="padding: 12px 10px; text-align: right;">Preço</th>
-                    <th style="padding: 12px 10px; text-align: center; color: #00D4AA;">TQS Score</th>
-                    <th style="padding: 12px 8px; text-align: center;">Macro</th>
-                    <th style="padding: 12px 8px; text-align: center;">Setor RS</th>
-                    <th style="padding: 12px 8px; text-align: center;">Trend</th>
-                    <th style="padding: 12px 8px; text-align: center;">Trigger</th>
-                    <th style="padding: 12px 8px; text-align: right;">ADX</th>
-                    <th style="padding: 12px 8px; text-align: right;">ER</th>
-                    <th style="padding: 12px 8px; text-align: right;">RSI</th>
-                    <th style="padding: 12px 10px; text-align: center;">Recomendação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(rows_html)}
-            </tbody>
-        </table>
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <div style="color: #8892B0; font-size: 0.76rem; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+            <span>👉</span> <i>Arraste a tabela horizontalmente para conferir todas as colunas</i>
+        </div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #232936; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <table style="width: 100%; min-width: 880px; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background-color: #1A2030; border-bottom: 2px solid #00D4AA; color: #8892B0; text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.8px;">
+                        <th style="padding: 12px 8px; text-align: center;">Rank</th>
+                        <th style="padding: 12px 10px; text-align: left;">Ticker</th>
+                        <th style="padding: 12px 10px; text-align: left;">Setor</th>
+                        <th style="padding: 12px 10px; text-align: right;">Preço</th>
+                        <th style="padding: 12px 10px; text-align: center; color: #00D4AA;">TQS Score</th>
+                        <th style="padding: 12px 8px; text-align: center;">Macro</th>
+                        <th style="padding: 12px 8px; text-align: center;">Setor RS</th>
+                        <th style="padding: 12px 8px; text-align: center;">Trend</th>
+                        <th style="padding: 12px 8px; text-align: center;">Trigger</th>
+                        <th style="padding: 12px 8px; text-align: right;">ADX</th>
+                        <th style="padding: 12px 8px; text-align: right;">ER</th>
+                        <th style="padding: 12px 8px; text-align: right;">RSI</th>
+                        <th style="padding: 12px 10px; text-align: center;">Recomendação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(rows_html)}
+                </tbody>
+            </table>
+        </div>
     </div>
     """
 
@@ -373,7 +383,7 @@ def render_score_decomposition(score: FinalScore) -> None:
     )
     st.plotly_chart(fig_bar, use_container_width=True, key=f"bar_{score.ticker}")
 
-    # Detalhamento do Trend Engine
+    # Detalhamento do Trend Engine em grid responsivo auto-fit
     st.markdown("#### 📐 Nível 3 • Trend Engine (Sub-Componentes)")
     trend_items = {
         "EMA Alignment (0-25)": score.ema_alignment,
@@ -383,25 +393,29 @@ def render_score_decomposition(score: FinalScore) -> None:
         "Vol-Adj ROC (0-20)": score.vol_adj_roc,
     }
 
-    cols = st.columns(len(trend_items))
-    for i, (label, val) in enumerate(trend_items.items()):
+    trend_cards_html = []
+    for label, val in trend_items.items():
         max_val = float(label.split("0-")[1].rstrip(")"))
         pct = val / max_val * 100 if max_val > 0 else 0
         color = "#00D4AA" if pct >= 60 else "#FFD700" if pct >= 40 else "#FF4444"
-        with cols[i]:
-            st_html(f"""
-            <div style="text-align: center; padding: 8px 4px; background: #151922; border-radius: 8px; border-left: 3px solid {color}; margin-bottom: 8px;">
-                <span style="color: #8892B0; font-size: 0.7em; display: block; height: 26px; line-height: 13px;">{label}</span>
-                <span style="color: {color}; font-size: 1.25em; font-weight: 700;">{val:.1f}</span>
-            </div>
-            """)
+        trend_cards_html.append(f"""
+        <div style="text-align: center; padding: 8px 4px; background: #151922; border-radius: 8px; border-left: 3px solid {color};">
+            <span style="color: #8892B0; font-size: 0.72rem; display: block; min-height: 24px; line-height: 12px;">{label}</span>
+            <span style="color: {color}; font-size: 1.2rem; font-weight: 700;">{val:.1f}</span>
+        </div>
+        """)
 
-    # Trigger info — Cartões balanceados e legíveis sem truncamento
+    st_html(f"""
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; margin-bottom: 12px;">
+        {''.join(trend_cards_html)}
+    </div>
+    """)
+
+    # Trigger info — Cartões em grid responsivo auto-fit
     if score.trigger:
         st.markdown("#### 🎯 Nível 4 • Gatilho de Entrada & Anti-Exaustão")
         t = score.trigger
 
-        # Determinação de cores e badges para o status
         if "Compra Forte" in t.status:
             status_color = "#00D4AA"
             status_bg = "rgba(0, 212, 170, 0.15)"
@@ -421,40 +435,29 @@ def render_score_decomposition(score: FinalScore) -> None:
         pullback_txt = "✅ Sim (Zona de Valor)" if t.in_pullback_zone else "❌ Fora da Faixa"
         pullback_col = "#00D4AA" if t.in_pullback_zone else "#8892B0"
 
-        # Grid 2x2 com tamanho de fonte perfeitamente calibrado
-        row1_c1, row1_c2 = st.columns(2)
-        with row1_c1:
-            st_html(f"""
-            <div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
-                <div style="color: #8892B0; font-size: 0.78rem; margin-bottom: 2px;">Dist. Média (ATRs)</div>
+        trigger_cards_html = f"""
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 8px; margin-top: 6px; margin-bottom: 10px;">
+            <div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="color: #8892B0; font-size: 0.76rem; margin-bottom: 2px;">Dist. Média (ATRs)</div>
                 <div style="color: #E0E0E0; font-size: 1.15rem; font-weight: 700;">{t.distance_from_mean:.2f}</div>
             </div>
-            """)
-        with row1_c2:
-            st_html(f"""
-            <div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
-                <div style="color: #8892B0; font-size: 0.78rem; margin-bottom: 2px;">RSI (14)</div>
+            <div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="color: #8892B0; font-size: 0.76rem; margin-bottom: 2px;">RSI (14)</div>
                 <div style="color: #E0E0E0; font-size: 1.15rem; font-weight: 700;">{t.rsi_14:.1f}</div>
             </div>
-            """)
-
-        row2_c1, row2_c2 = st.columns(2)
-        with row2_c1:
-            st_html(f"""
             <div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 10px; text-align: center;">
-                <div style="color: #8892B0; font-size: 0.78rem; margin-bottom: 2px;">Pullback Zone</div>
+                <div style="color: #8892B0; font-size: 0.76rem; margin-bottom: 2px;">Pullback Zone</div>
                 <div style="color: {pullback_col}; font-size: 0.92rem; font-weight: 700; line-height: 1.3;">{pullback_txt}</div>
             </div>
-            """)
-        with row2_c2:
-            st_html(f"""
             <div style="background: {status_bg}; border: 1px solid {status_color}; border-radius: 8px; padding: 10px; text-align: center;">
-                <div style="color: #BBB; font-size: 0.78rem; margin-bottom: 2px;">Recomendação</div>
-                <div style="color: {status_color}; font-size: 0.95rem; font-weight: 800; line-height: 1.3;">
+                <div style="color: #BBB; font-size: 0.76rem; margin-bottom: 2px;">Recomendação</div>
+                <div style="color: {status_color}; font-size: 0.92rem; font-weight: 800; line-height: 1.3;">
                     {t.status_emoji} {t.status}
                 </div>
             </div>
-            """)
+        </div>
+        """
+        st_html(trigger_cards_html)
 
 
 def render_sector_heatmap(
@@ -524,25 +527,30 @@ def render_sector_heatmap(
         sector_rows_html.append(row_h)
 
     sec_table_html = f"""
-    <div style="overflow-x: auto; border: 1px solid #232936; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-top: 10px; margin-bottom: 20px;">
-        <table style="width: 100%; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.88rem;">
-            <thead>
-                <tr style="background-color: #1A2030; border-bottom: 2px solid #00D4AA; color: #8892B0; text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.8px;">
-                    <th style="padding: 12px 8px; text-align: center;">Rank</th>
-                    <th style="padding: 12px 12px; text-align: left;">Setor Econômico</th>
-                    <th style="padding: 12px 10px; text-align: center; color: #00D4AA;">RS Score</th>
-                    <th style="padding: 12px 10px; text-align: right;">ROC 63d</th>
-                    <th style="padding: 12px 10px; text-align: right;">ROC 126d</th>
-                    <th style="padding: 12px 10px; text-align: center;">RS > SMA 50</th>
-                    <th style="padding: 12px 10px; text-align: center;">Quartil</th>
-                    <th style="padding: 12px 10px; text-align: center;">Nº Ativos</th>
-                    <th style="padding: 12px 10px; text-align: center;">TQS Médio</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(sector_rows_html)}
-            </tbody>
-        </table>
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <div style="color: #8892B0; font-size: 0.76rem; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+            <span>👉</span> <i>Arraste a tabela horizontalmente para conferir todos os parâmetros setoriais</i>
+        </div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #232936; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <table style="width: 100%; min-width: 820px; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background-color: #1A2030; border-bottom: 2px solid #00D4AA; color: #8892B0; text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.8px;">
+                        <th style="padding: 12px 8px; text-align: center;">Rank</th>
+                        <th style="padding: 12px 12px; text-align: left;">Setor Econômico</th>
+                        <th style="padding: 12px 10px; text-align: center; color: #00D4AA;">RS Score</th>
+                        <th style="padding: 12px 10px; text-align: right;">ROC 63d</th>
+                        <th style="padding: 12px 10px; text-align: right;">ROC 126d</th>
+                        <th style="padding: 12px 10px; text-align: center;">RS > SMA 50</th>
+                        <th style="padding: 12px 10px; text-align: center;">Quartil</th>
+                        <th style="padding: 12px 10px; text-align: center;">Nº Ativos</th>
+                        <th style="padding: 12px 10px; text-align: center;">TQS Médio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(sector_rows_html)}
+                </tbody>
+            </table>
+        </div>
     </div>
     """
 

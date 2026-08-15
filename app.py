@@ -58,9 +58,16 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Tabs styling */
+    /* Tabs styling com suporte a scroll horizontal no mobile */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+        display: none;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: #151922;
@@ -69,6 +76,8 @@ st.markdown("""
         color: #8892B0;
         font-weight: 600;
         border: 1px solid #232936;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
     .stTabs [aria-selected="true"] {
         background-color: rgba(0, 212, 170, 0.12) !important;
@@ -82,7 +91,7 @@ st.markdown("""
         border-right: 1px solid #1E2433;
     }
 
-    /* Expander styling no sidebar */
+    /* Expander styling */
     .streamlit-expanderHeader {
         background-color: #151922 !important;
         border-radius: 6px !important;
@@ -100,26 +109,55 @@ st.markdown("""
     /* Divider */
     hr { border-color: #232936 !important; margin: 1.2rem 0 !important; }
 
-    /* ── Otimização para Telas Menores e Mobile ── */
+    /* ── Otimização Completa para Mobile & Telas Pequenas (<= 768px) ── */
     @media (max-width: 768px) {
         .block-container {
-            padding-left: 0.7rem !important;
-            padding-right: 0.7rem !important;
-            padding-top: 0.8rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            padding-top: 0.6rem !important;
+            padding-bottom: 1.5rem !important;
         }
-        h1 { font-size: 1.5rem !important; }
-        h2 { font-size: 1.25rem !important; }
+        h1 { font-size: 1.4rem !important; margin-bottom: 0.3rem !important; }
+        h2 { font-size: 1.2rem !important; }
         h3 { font-size: 1.05rem !important; }
+        h4 { font-size: 0.95rem !important; }
+
+        /* Ajuste de métricas no mobile */
         [data-testid="stMetric"] {
-            padding: 8px 10px !important;
+            padding: 8px 12px !important;
             margin-bottom: 6px !important;
         }
         [data-testid="stMetricValue"] {
-            font-size: 1.2rem !important;
+            font-size: 1.25rem !important;
         }
+        [data-testid="stMetricLabel"] {
+            font-size: 0.78rem !important;
+        }
+
+        /* Tabs mais compactas e fáceis de tocar */
         .stTabs [data-baseweb="tab"] {
-            padding: 6px 10px !important;
-            font-size: 0.8em !important;
+            padding: 6px 12px !important;
+            font-size: 0.82rem !important;
+        }
+
+        /* Gráficos Plotly em tela cheia suave */
+        .js-plotly-plot .plotly .modebar {
+            transform: scale(0.85);
+            transform-origin: top right;
+        }
+
+        /* Espaçamento de colunas nativas */
+        [data-testid="stHorizontalBlock"] {
+            gap: 8px !important;
+        }
+    }
+
+    /* ── Mobile Ultra-Compact (<= 480px) ── */
+    @media (max-width: 480px) {
+        h1 { font-size: 1.25rem !important; }
+        .stTabs [data-baseweb="tab"] {
+            padding: 5px 10px !important;
+            font-size: 0.76rem !important;
         }
     }
 </style>
