@@ -3,9 +3,9 @@ dashboard.py — Componentes de UI para o Dashboard principal.
 
 Renderiza:
 - Métricas KPI no topo (Regime, Breadth, etc.)
-- Tabela interativa Top N com badges coloridos
+- Tabela interativa Top N com zebra striping e badges coloridos
 - Heatmap setorial
-- Decomposição de sub-scores
+- Decomposição de sub-scores responsiva
 """
 
 from __future__ import annotations
@@ -42,18 +42,27 @@ def render_macro_kpis(
     st.markdown(
         f"""
         <div style="
-            background: linear-gradient(135deg, #1a1d23 0%, #262b36 100%);
-            border: 1px solid {regime_color}40;
+            background: linear-gradient(135deg, #131720 0%, #1e2430 100%);
+            border: 1px solid {regime_color}50;
             border-radius: 12px;
-            padding: 20px 28px;
-            margin-bottom: 24px;
+            padding: 18px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         ">
-            <h3 style="color: {regime_color}; margin: 0 0 8px 0; font-size: 1.1em;">
-                Regime de Mercado
-            </h3>
-            <p style="color: {regime_color}; font-size: 1.6em; font-weight: 700; margin: 0;">
-                {regime}
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <span style="color: #8892B0; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                        Nível 1 • Regime Macro de Mercado
+                    </span>
+                    <h2 style="color: {regime_color}; margin: 4px 0 0 0; font-size: 1.6em; font-weight: 800;">
+                        {regime}
+                    </h2>
+                </div>
+                <div style="background: {regime_color}18; border: 1px solid {regime_color}40; border-radius: 8px; padding: 6px 14px; text-align: right;">
+                    <span style="color: #AAA; font-size: 0.75em; display: block;">SCORE MACRO</span>
+                    <span style="color: {regime_color}; font-size: 1.4em; font-weight: 800;">{macro_score:.0f}/100</span>
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -62,26 +71,27 @@ def render_macro_kpis(
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
-            label="📊 Ações > SMA 50",
+            label="📊 Amplitude Curto Prazo (> SMA 50)",
             value=f"{pct_sma50:.1f}%",
-            delta=None,
+            help="Percentual de todos os ativos do universo monitorado cotados acima da Média Móvel Simples de 50 períodos.",
         )
     with col2:
         st.metric(
-            label="📈 Ações > SMA 200",
+            label="📈 Amplitude Longo Prazo (> SMA 200)",
             value=f"{pct_sma200:.1f}%",
-            delta=None,
+            help="Percentual de ativos cotados acima da SMA 200. Base do filtro eliminatório de regime institucional (>60% Risk-on, <40% Defensivo).",
         )
     with col3:
+        status_txt = "Risk-On (Expansão)" if pct_sma200 >= 60 else ("Neutro" if pct_sma200 >= 40 else "Risk-Off (Defensivo)")
         st.metric(
-            label="🎯 Score Macro",
-            value=f"{macro_score:.0f}/100",
-            delta=None,
+            label="🧭 Condição Estrutural",
+            value=status_txt,
+            help="Classificação algorítmica da postura operacional sugerida para estratégias direcionais.",
         )
 
     # Correlações
     if correlations:
-        st.markdown("##### Correlações Rolantes (63 dias)")
+        st.markdown("##### 🔗 Correlações Rolantes (63 dias)")
         corr_cols = st.columns(min(len(correlations), 4))
         for i, (name, val) in enumerate(correlations.items()):
             with corr_cols[i % len(corr_cols)]:
@@ -90,7 +100,7 @@ def render_macro_kpis(
                     f"""<div style="text-align: center; padding: 8px; background: #1a1d2380;
                     border-radius: 8px; border: 1px solid {color}30;">
                     <span style="color: #888; font-size: 0.8em;">{name}</span><br>
-                    <span style="color: {color}; font-size: 1.3em; font-weight: 600;">
+                    <span style="color: {color}; font-size: 1.2em; font-weight: 700;">
                     {val:+.2f}</span></div>""",
                     unsafe_allow_html=True,
                 )
@@ -100,12 +110,7 @@ def render_breadth_chart(
     breadth_50: pd.Series | None,
     breadth_200: pd.Series | None,
 ) -> None:
-    """Renderiza gráfico histórico de market breadth.
-
-    Args:
-        breadth_50: Série % > SMA50.
-        breadth_200: Série % > SMA200.
-    """
+    """Renderiza gráfico histórico de market breadth."""
     if breadth_50 is None and breadth_200 is None:
         return
 
@@ -132,18 +137,18 @@ def render_breadth_chart(
         ))
 
     # Linhas de referência
-    fig.add_hline(y=60, line_dash="dash", line_color="#00D4AA", opacity=0.4,
-                  annotation_text="Favorável (60%)")
-    fig.add_hline(y=40, line_dash="dash", line_color="#FF4444", opacity=0.4,
-                  annotation_text="Defensivo (40%)")
+    fig.add_hline(y=60, line_dash="dash", line_color="#00D4AA", opacity=0.5,
+                  annotation_text="Favorável (60%)", annotation_position="top left")
+    fig.add_hline(y=40, line_dash="dash", line_color="#FF4444", opacity=0.5,
+                  annotation_text="Defensivo (40%)", annotation_position="bottom left")
 
     fig.update_layout(
-        title="Market Breadth — Amplitude de Mercado",
+        title="Histórico de Amplitude de Mercado (Market Breadth)",
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=350,
-        margin=dict(l=60, r=30, t=50, b=40),
+        height=320,
+        margin=dict(l=50, r=20, t=50, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         yaxis=dict(title="% do Universo", range=[0, 100]),
         xaxis=dict(title=""),
@@ -170,44 +175,54 @@ def render_ranking_table(
     df: pd.DataFrame,
     top_n: int = 20,
 ) -> None:
-    """Renderiza tabela de ranking com estilização.
+    """Renderiza tabela de ranking com linhas de tons alternados (Zebra Striping) e cores institucionais.
 
     Args:
-        df: DataFrame com scores (output de scores_to_dataframe).
+        df: DataFrame com scores formatados.
         top_n: Número de ativos a exibir.
     """
     display_df = df.head(top_n).copy()
 
     if display_df.empty:
-        st.warning("Nenhum ativo encontrado com dados suficientes.")
+        st.warning("Nenhum ativo encontrado com os parâmetros atuais.")
         return
 
-    # Estilização com cores condicionais
+    # Formatação de cores de texto
     def color_tqs(val: float) -> str:
         color = _tqs_color(val)
-        return f"color: {color}; font-weight: 700;"
+        return f"color: {color}; font-weight: 800;"
 
     def color_score(val: float) -> str:
-        if val >= 60:
-            return "color: #00D4AA;"
-        elif val >= 40:
-            return "color: #FFD700;"
+        if val >= 65:
+            return "color: #00D4AA; font-weight: 600;"
+        elif val >= 45:
+            return "color: #FFD700; font-weight: 600;"
         else:
-            return "color: #FF4444;"
+            return "color: #FF6B6B;"
 
-    def highlight_row(row: pd.Series) -> list[str]:
-        tqs = row.get("TQS", 0)
-        if tqs >= 75:
-            bg = "background-color: rgba(0, 212, 170, 0.08);"
-        elif tqs >= 55:
-            bg = "background-color: rgba(124, 255, 203, 0.05);"
-        else:
-            bg = ""
-        return [bg] * len(row)
+    # Zebra striping profissional com tons alternados escuros
+    def style_zebra_and_rank(data: pd.DataFrame) -> pd.DataFrame:
+        styles = pd.DataFrame("", index=data.index, columns=data.columns)
+        for i, row_idx in enumerate(data.index):
+            # Alternância de tons de fundo
+            if i % 2 == 0:
+                bg = "background-color: #121620;"
+            else:
+                bg = "background-color: #1A202C;"
+
+            # Destaque de borda para top performers
+            tqs_val = data.loc[row_idx, "TQS"] if "TQS" in data.columns else 0
+            if tqs_val >= 75:
+                bg += " border-left: 3px solid #00D4AA;"
+            elif tqs_val >= 60:
+                bg += " border-left: 3px solid #FFD700;"
+
+            styles.loc[row_idx, :] = bg
+        return styles
 
     styled = (
         display_df.style
-        .apply(highlight_row, axis=1)
+        .apply(style_zebra_and_rank, axis=None)
         .map(color_tqs, subset=["TQS"])
         .map(color_score, subset=["Macro", "Setor RS", "Trend", "Trigger"])
         .format({
@@ -226,47 +241,47 @@ def render_ranking_table(
     st.dataframe(
         styled,
         use_container_width=True,
-        height=min(45 * len(display_df) + 50, 800),
+        height=min(42 * len(display_df) + 45, 900),
         hide_index=True,
     )
 
 
 def render_score_decomposition(score: FinalScore) -> None:
-    """Renderiza decomposição detalhada dos sub-scores de um ativo.
+    """Renderiza decomposição detalhada dos sub-scores de um ativo com layout responsivo.
 
     Args:
         score: FinalScore do ativo selecionado.
     """
-    st.markdown(f"### 🔍 Decomposição — {score.ticker}")
-    st.markdown(f"**Setor:** {score.sector} | **Preço:** R$ {score.price:.2f}")
+    st.markdown(f"### 🔍 Decomposição Quantitativa — `{score.ticker}`")
+    st.markdown(f"**Setor Econômico:** {score.sector} | **Último Fechamento:** R$ {score.price:.2f}")
 
     # TQS gauge
     fig_gauge = go.Figure(go.Indicator(
         mode="gauge+number",
         value=score.tqs,
         domain=dict(x=[0, 1], y=[0, 1]),
-        title=dict(text="Trend Quality Score", font=dict(size=16)),
-        number=dict(font=dict(size=40, color=_tqs_color(score.tqs))),
+        title=dict(text="Trend Quality Score (TQS)", font=dict(size=15, color="#AAA")),
+        number=dict(font=dict(size=38, color=_tqs_color(score.tqs))),
         gauge=dict(
             axis=dict(range=[0, 100], tickwidth=1, tickcolor="#666"),
             bar=dict(color=_tqs_color(score.tqs)),
-            bgcolor="#1a1d23",
+            bgcolor="#151922",
             borderwidth=2,
-            bordercolor="#333",
+            bordercolor="#2A303C",
             steps=[
                 dict(range=[0, 25], color="rgba(255, 68, 68, 0.13)"),
                 dict(range=[25, 50], color="rgba(255, 215, 0, 0.08)"),
                 dict(range=[50, 75], color="rgba(0, 212, 170, 0.08)"),
                 dict(range=[75, 100], color="rgba(0, 212, 170, 0.15)"),
             ],
-            threshold=dict(line=dict(color="#fff", width=2), thickness=0.75, value=score.tqs),
+            threshold=dict(line=dict(color="#FFF", width=2), thickness=0.75, value=score.tqs),
         ),
     ))
     fig_gauge.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
-        height=250,
-        margin=dict(l=30, r=30, t=30, b=10),
+        height=230,
+        margin=dict(l=25, r=25, t=25, b=10),
     )
     st.plotly_chart(fig_gauge, use_container_width=True, key=f"gauge_{score.ticker}")
 
@@ -283,23 +298,23 @@ def render_score_decomposition(score: FinalScore) -> None:
         x=values,
         orientation="h",
         marker_color=colors,
-        text=[f"{v:.0f} (×{w:.0%} = {wv:.1f})" for v, w, wv in zip(values, weights, weighted_vals)],
+        text=[f"{v:.0f} pts (×{w:.0%} = {wv:.1f})" for v, w, wv in zip(values, weights, weighted_vals)],
         textposition="inside",
-        textfont=dict(color="white", size=12),
+        textfont=dict(color="white", size=11, family="sans-serif"),
     ))
     fig_bar.update_layout(
         template="plotly_dark",
         paper_bgcolor="#0E1117",
         plot_bgcolor="#0E1117",
-        height=200,
-        margin=dict(l=80, r=30, t=10, b=10),
-        xaxis=dict(range=[0, 100], title="Score"),
+        height=190,
+        margin=dict(l=70, r=20, t=10, b=10),
+        xaxis=dict(range=[0, 100], title="Pontuação (0-100)"),
         showlegend=False,
     )
     st.plotly_chart(fig_bar, use_container_width=True, key=f"bar_{score.ticker}")
 
     # Detalhamento do Trend Engine
-    st.markdown("#### 📐 Trend Engine — Sub-componentes")
+    st.markdown("#### 📐 Nível 3 • Trend Engine (Sub-Componentes)")
     trend_items = {
         "EMA Alignment (0-25)": score.ema_alignment,
         "Slope SMA50 (0-15)": score.slope,
@@ -315,27 +330,76 @@ def render_score_decomposition(score: FinalScore) -> None:
         color = "#00D4AA" if pct >= 60 else "#FFD700" if pct >= 40 else "#FF4444"
         with cols[i]:
             st.markdown(
-                f"""<div style="text-align: center; padding: 10px; background: #1a1d2380;
-                border-radius: 8px; border-left: 3px solid {color};">
-                <span style="color: #888; font-size: 0.7em;">{label}</span><br>
-                <span style="color: {color}; font-size: 1.4em; font-weight: 700;">
+                f"""<div style="text-align: center; padding: 8px 4px; background: #151922;
+                border-radius: 8px; border-left: 3px solid {color}; margin-bottom: 8px;">
+                <span style="color: #8892B0; font-size: 0.7em; display: block; height: 28px; line-height: 14px;">{label}</span>
+                <span style="color: {color}; font-size: 1.3em; font-weight: 700;">
                 {val:.1f}</span></div>""",
                 unsafe_allow_html=True,
             )
 
-    # Trigger info
+    # Trigger info — Layout customizado sem st.metric para evitar texto cortado
     if score.trigger:
-        st.markdown("#### 🎯 Trigger & Anti-Exaustão")
+        st.markdown("#### 🎯 Nível 4 • Gatilho de Entrada & Anti-Exaustão")
         t = score.trigger
-        tc1, tc2, tc3, tc4 = st.columns(4)
-        with tc1:
-            st.metric("Dist. da Média (ATRs)", f"{t.distance_from_mean:.2f}")
-        with tc2:
-            st.metric("RSI(14)", f"{t.rsi_14:.1f}")
-        with tc3:
-            st.metric("Pullback Zone", "✅ Sim" if t.in_pullback_zone else "❌ Não")
-        with tc4:
-            st.metric("Status", f"{t.status_emoji} {t.status}")
+
+        # Determinação de cores e badges para o status
+        if "Compra Forte" in t.status:
+            status_color = "#00D4AA"
+            status_bg = "rgba(0, 212, 170, 0.15)"
+        elif "Compra" in t.status:
+            status_color = "#FFD700"
+            status_bg = "rgba(255, 215, 0, 0.15)"
+        elif "Sobrecomprado" in t.status:
+            status_color = "#FF4444"
+            status_bg = "rgba(255, 68, 68, 0.15)"
+        elif "Pullback" in t.status:
+            status_color = "#FF8C00"
+            status_bg = "rgba(255, 140, 0, 0.15)"
+        else:
+            status_color = "#AAAAAA"
+            status_bg = "rgba(255, 255, 255, 0.05)"
+
+        pullback_txt = "✅ Sim (Zona de Valor)" if t.in_pullback_zone else "❌ Não"
+        pullback_col = "#00D4AA" if t.in_pullback_zone else "#888888"
+
+        row1_c1, row1_c2 = st.columns(2)
+        with row1_c1:
+            st.markdown(
+                f"""<div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 10px;">
+                    <div style="color: #8892B0; font-size: 0.8em; margin-bottom: 2px;">Dist. Média (ATRs)</div>
+                    <div style="color: #E0E0E0; font-size: 1.3em; font-weight: 700;">{t.distance_from_mean:.2f}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        with row1_c2:
+            st.markdown(
+                f"""<div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 10px;">
+                    <div style="color: #8892B0; font-size: 0.8em; margin-bottom: 2px;">RSI (14)</div>
+                    <div style="color: #E0E0E0; font-size: 1.3em; font-weight: 700;">{t.rsi_14:.1f}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+
+        row2_c1, row2_c2 = st.columns(2)
+        with row2_c1:
+            st.markdown(
+                f"""<div style="background: #151922; border: 1px solid #2A303C; border-radius: 8px; padding: 12px; text-align: center;">
+                    <div style="color: #8892B0; font-size: 0.8em; margin-bottom: 2px;">Pullback Zone</div>
+                    <div style="color: {pullback_col}; font-size: 1.15em; font-weight: 700;">{pullback_txt}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        with row2_c2:
+            st.markdown(
+                f"""<div style="background: {status_bg}; border: 1px solid {status_color}; border-radius: 8px; padding: 12px; text-align: center;">
+                    <div style="color: #BBB; font-size: 0.8em; margin-bottom: 2px;">Status do Gatilho</div>
+                    <div style="color: {status_color}; font-size: 1.15em; font-weight: 800;">
+                        {t.status_emoji} {t.status}
+                    </div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
 
 
 def render_sector_heatmap(
@@ -343,13 +407,7 @@ def render_sector_heatmap(
     ticker_sector_map: dict[str, str],
     scores: list[FinalScore],
 ) -> None:
-    """Renderiza heatmap de performance setorial.
-
-    Args:
-        sector_analysis: SectorAnalysis com dados de RS.
-        ticker_sector_map: Mapeamento {ticker: setor}.
-        scores: Lista de FinalScore.
-    """
+    """Renderiza heatmap de performance setorial."""
     if not sector_analysis.sectors:
         st.info("Dados setoriais insuficientes para gerar heatmap.")
         return
@@ -357,7 +415,6 @@ def render_sector_heatmap(
     # Dados para heatmap
     sectors_data = []
     for name, sr in sector_analysis.sectors.items():
-        # Contar ativos nesse setor
         n_tickers = sum(1 for s in scores if s.sector == name)
         avg_tqs = np.mean([s.tqs for s in scores if s.sector == name]) if n_tickers > 0 else 0
 
@@ -386,13 +443,13 @@ def render_sector_heatmap(
             color="RS Score",
             color_continuous_scale=["#FF4444", "#FFD700", "#00D4AA"],
             color_continuous_midpoint=50,
-            title="Mapa de Força Relativa Setorial",
+            title="Distribuição & Força Relativa Setorial (RS Score)",
         )
         fig.update_layout(
             template="plotly_dark",
             paper_bgcolor="#0E1117",
-            height=400,
-            margin=dict(l=10, r=10, t=50, b=10),
+            height=380,
+            margin=dict(l=10, r=10, t=45, b=10),
         )
         fig.update_traces(
             textinfo="label+value+text",

@@ -1,5 +1,5 @@
 """
-app.py — Entry Point do Quant Top-Down Screener.
+app.py — Entry Point do Quant Top-Down Screener (B3).
 
 Aplicação Streamlit que implementa um Screener de Ações Top-Down
 Quant-Mental, filtrando e ranqueando ativos líquidos da B3 através
@@ -27,26 +27,35 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS ──
+# ── Custom CSS com Design Institucional & Mobile Responsivo ──
 st.markdown("""
 <style>
-    /* Remove padding do topo */
-    .block-container { padding-top: 1.5rem; }
+    /* Remove padding excessivo */
+    .block-container { 
+        padding-top: 1.2rem; 
+        padding-bottom: 2rem;
+    }
 
-    /* Header styling */
+    /* Tipografia e cores principais */
     h1 { color: #00D4AA !important; font-weight: 800 !important; }
-    h2, h3 { color: #E0E0E0 !important; }
+    h2, h3 { color: #E0E6ED !important; }
 
-    /* Metric cards */
+    /* Metric cards refinados */
     [data-testid="stMetric"] {
-        background: linear-gradient(135deg, #1a1d23 0%, #222730 100%);
-        border: 1px solid #333;
+        background: linear-gradient(135deg, #131720 0%, #1c222e 100%);
+        border: 1px solid #283040;
         border-radius: 10px;
         padding: 12px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     [data-testid="stMetricValue"] {
         color: #00D4AA !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
+        font-size: 1.5rem !important;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #8892B0 !important;
+        font-weight: 600 !important;
     }
 
     /* Tabs styling */
@@ -54,27 +63,65 @@ st.markdown("""
         gap: 8px;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: #1a1d2380;
+        background-color: #151922;
         border-radius: 8px;
-        padding: 8px 20px;
-        color: #aaa;
+        padding: 8px 18px;
+        color: #8892B0;
+        font-weight: 600;
+        border: 1px solid #232936;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #00D4AA20 !important;
+        background-color: rgba(0, 212, 170, 0.12) !important;
         color: #00D4AA !important;
-        border-bottom: 2px solid #00D4AA;
+        border: 1px solid #00D4AA !important;
     }
 
-    /* Sidebar */
+    /* Sidebar institucional */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0E1117 0%, #161B22 100%);
+        background: linear-gradient(180deg, #0B0E14 0%, #121620 100%);
+        border-right: 1px solid #1E2433;
     }
 
-    /* Dataframe */
-    .stDataFrame { border-radius: 8px; overflow: hidden; }
+    /* Expander styling no sidebar */
+    .streamlit-expanderHeader {
+        background-color: #151922 !important;
+        border-radius: 6px !important;
+        font-size: 0.9em !important;
+        color: #CCD6F6 !important;
+    }
+
+    /* Dataframe container */
+    .stDataFrame { 
+        border-radius: 10px; 
+        overflow: hidden; 
+        border: 1px solid #232936;
+    }
 
     /* Divider */
-    hr { border-color: #333 !important; }
+    hr { border-color: #232936 !important; margin: 1.2rem 0 !important; }
+
+    /* ── Otimização para Telas Menores e Mobile ── */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 0.7rem !important;
+            padding-right: 0.7rem !important;
+            padding-top: 0.8rem !important;
+        }
+        h1 { font-size: 1.5rem !important; }
+        h2 { font-size: 1.25rem !important; }
+        h3 { font-size: 1.05rem !important; }
+        [data-testid="stMetric"] {
+            padding: 8px 10px !important;
+            margin-bottom: 6px !important;
+        }
+        [data-testid="stMetricValue"] {
+            font-size: 1.2rem !important;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 6px 10px !important;
+            font-size: 0.8em !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,7 +129,7 @@ st.markdown("""
 from data.universe import (
     BENCHMARK_TICKER,
     IBOV_UNIVERSE,
-    SECTOR_INDICES,
+    SMALL_CAPS,
     get_universe,
     get_all_sectors,
 )
@@ -119,48 +166,89 @@ from ui.charts import (
 
 with st.sidebar:
     st.markdown("""
-    <div style="text-align: center; padding: 15px 0;">
-        <h1 style="font-size: 1.6em; margin: 0; color: #00D4AA;">📊 Quant Screener</h1>
-        <p style="color: #888; font-size: 0.85em; margin: 5px 0 0 0;">
-            Top-Down | Pipeline 4 Níveis
+    <div style="text-align: center; padding: 10px 0 15px 0;">
+        <h1 style="font-size: 1.5em; margin: 0; color: #00D4AA;">📊 Quant Screener</h1>
+        <p style="color: #8892B0; font-size: 0.8em; margin: 4px 0 0 0; font-weight: 500;">
+            Pipeline Hierárquico Top-Down • B3
         </p>
     </div>
     """, unsafe_allow_html=True)
 
+    # Expander explicativo sobre o TQS
+    with st.expander("💡 O que é o TQS & Metodologia?", expanded=False):
+        st.markdown(r"""
+        O **Trend Quality Score (TQS: 0 a 100)** sintetiza uma análise quantitativa institucional em 4 camadas:
+        
+        $$\text{TQS} = w_1\text{Macro} + w_2\text{Setor} + w_3\text{Trend} + w_4\text{Trigger}$$
+        
+        * **🌐 Nível 1 • Macro (Default 20%):** Amplitude de mercado (% acima de SMA 50 e 200). Protege o portfólio em regimes defensivos.
+        * **🏢 Nível 2 • Setor RS (Default 20%):** Força Relativa do setor vs. Ibovespa ($\text{RS} > \text{SMA}_{50}$ e ROC 63d/126d).
+        * **📈 Nível 3 • Trend Engine (Default 45%):** Alinhamento EMA, Slope SMA50, ADX $\ge 25$, Kaufman ER $\ge 0.40$ e Vol-Adj ROC.
+        * **🎯 Nível 4 • Trigger (Default 15%):** Anti-exaustão ($\text{Dist. SMA20} \le 2.2\text{ ATR}$), RSI(14) 45-70 e Pullback.
+        """)
+
     st.divider()
 
-    # Universo
-    st.markdown("### 🌐 Universo de Ativos")
+    # 1. Universo de Ativos
+    st.markdown("### 🌐 1. Universo de Ativos")
     universe_option = st.selectbox(
-        "Seleção",
-        options=["Ibovespa", "Ibovespa + Small Caps", "Small Caps"],
+        "Selecione o Universo",
+        options=[
+            f"Ibovespa Líquido ({len(IBOV_UNIVERSE)} ativos)",
+            f"Universo Amplo B3 ({len(IBOV_UNIVERSE) + len(SMALL_CAPS)} ativos)",
+            f"Small & Mid Caps ({len(SMALL_CAPS)} ativos)",
+        ],
         index=0,
+        help="Escolha o conjunto de tickers auditados para escanear.",
         key="universe_select",
     )
 
-    universe_map = {
-        "Ibovespa": "ibov",
-        "Ibovespa + Small Caps": "amplo",
-        "Small Caps": "smallcaps",
-    }
-    selected_universe = universe_map[universe_option]
+    if "Ibovespa Líquido" in universe_option:
+        selected_universe = "ibov"
+    elif "Universo Amplo" in universe_option:
+        selected_universe = "amplo"
+    else:
+        selected_universe = "smallcaps"
 
     # Tickers customizados
     custom_tickers = st.text_area(
-        "Tickers customizados (separados por vírgula)",
-        placeholder="Ex: PETR4.SA, VALE3.SA, WEGE3.SA",
+        "Adicionar tickers customizados (vírgula):",
+        placeholder="Ex: WEGE3.SA, VALE3.SA, PETR4.SA",
+        help="Adicione tickers extras com ou sem o sufixo .SA.",
         key="custom_tickers",
-        height=68,
+        height=65,
     )
 
     st.divider()
 
-    # Pesos do TQS
-    st.markdown("### ⚖️ Pesos do TQS")
-    w_macro = st.slider("Macro", 0.0, 1.0, DEFAULT_WEIGHTS["macro"], 0.05, key="w_macro")
-    w_setor = st.slider("Setor RS", 0.0, 1.0, DEFAULT_WEIGHTS["setor"], 0.05, key="w_setor")
-    w_trend = st.slider("Trend", 0.0, 1.0, DEFAULT_WEIGHTS["trend"], 0.05, key="w_trend")
-    w_trigger = st.slider("Trigger", 0.0, 1.0, DEFAULT_WEIGHTS["trigger"], 0.05, key="w_trigger")
+    # 2. Pesos do TQS com Guia
+    st.markdown("### ⚖️ 2. Pesos do TQS")
+    st.caption("Ajuste a ponderação de cada camada do pipeline no score final:")
+
+    w_macro = st.slider(
+        "Macro (Regime / Breadth)",
+        0.0, 1.0, DEFAULT_WEIGHTS["macro"], 0.05,
+        help="Peso do regime macro e da saúde geral do mercado no score final.",
+        key="w_macro",
+    )
+    w_setor = st.slider(
+        "Força Relativa Setorial",
+        0.0, 1.0, DEFAULT_WEIGHTS["setor"], 0.05,
+        help="Peso da liderança do setor econômico vs. o Ibovespa.",
+        key="w_setor",
+    )
+    w_trend = st.slider(
+        "Trend Quality Engine",
+        0.0, 1.0, DEFAULT_WEIGHTS["trend"], 0.05,
+        help="Peso da estrutura direcional, momentum e eficiência do papel.",
+        key="w_trend",
+    )
+    w_trigger = st.slider(
+        "Gatilho & Anti-Exaustão",
+        0.0, 1.0, DEFAULT_WEIGHTS["trigger"], 0.05,
+        help="Peso do timing e filtro contra compras em topos esticados.",
+        key="w_trigger",
+    )
 
     # Normalizar pesos
     w_total = w_macro + w_setor + w_trend + w_trigger
@@ -174,25 +262,39 @@ with st.sidebar:
     else:
         weights = DEFAULT_WEIGHTS
 
-    st.caption(f"Soma normalizada: {w_total:.2f} → 1.00")
+    st.markdown(
+        f"""<div style="background: #151922; border-radius: 6px; padding: 6px 10px; font-size: 0.78em; color: #8892B0; text-align: center; border: 1px solid #232936;">
+        Soma normalizada: <b>{w_total:.2f}</b> → <b>100%</b>
+        </div>""",
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
-    # Filtros
-    st.markdown("### 🔧 Filtros")
-    min_tqs = st.slider("TQS mínimo para exibição", 0, 100, 0, 5, key="min_tqs")
-    top_n = st.slider("Top N para ranking", 5, 50, 20, 5, key="top_n")
+    # 3. Filtros Operacionais
+    st.markdown("### 🔧 3. Filtros & Ranking")
+    min_tqs = st.slider(
+        "Corte Mínimo de TQS",
+        0, 100, 0, 5,
+        help="Filtra a visualização para exibir apenas ativos com TQS igual ou superior ao patamar escolhido.",
+        key="min_tqs",
+    )
+    top_n = st.slider(
+        "Ativos no Ranking Principal",
+        5, 50, 20, 5,
+        help="Quantidade de melhores ativos exibidos na tabela da aba Overview.",
+        key="top_n",
+    )
 
     st.divider()
 
     # Recalcular
-    if st.button("🔄 Recalcular (Limpar Cache)", use_container_width=True, key="recalc"):
+    if st.button("🔄 Recalcular / Atualizar Cotações", use_container_width=True, key="recalc"):
         st.cache_data.clear()
         st.rerun()
 
-    st.divider()
-    st.caption("Dados: Yahoo Finance | Atualizado a cada hora")
-    st.caption("⚠️ Uso educacional — não constitui recomendação de investimento.")
+    st.caption("⏱️ Dados: Yahoo Finance | Cache: 1h")
+    st.caption("⚠️ Ferramenta quantitativa educacional — não é recomendação.")
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -201,8 +303,10 @@ with st.sidebar:
 
 st.markdown("""
 # 📊 Quant Top-Down Screener
-**Pipeline Hierárquico de 4 Níveis** — Regime Macro → Força Relativa Setorial → Trend Engine → Trigger
-""")
+<p style="color: #8892B0; font-size: 1.05em; margin-top: -8px;">
+    Pipeline Institucional de Seleção & Ranquear de Ações da B3
+</p>
+""", unsafe_allow_html=True)
 
 # ── 1. Carregar universo ──
 universe = get_universe(selected_universe)
@@ -219,37 +323,30 @@ if custom_tickers.strip():
 ticker_list = list(universe.keys())
 
 if not ticker_list:
-    st.error("Nenhum ticker selecionado. Selecione um universo na sidebar.")
+    st.error("Nenhum ticker selecionado. Selecione um universo no menu lateral.")
     st.stop()
 
-# ── 2. Fetch dados ──
-with st.spinner(f"📥 Baixando dados de {len(ticker_list)} ativos…"):
+# ── 2. Fetch dados com Spinner ──
+with st.spinner(f"📥 Coletando cotações de {len(ticker_list)} ativos da B3…"):
     universe_data = fetch_ohlcv(ticker_list, period="2y", interval="1d")
     benchmark_data = fetch_benchmark(BENCHMARK_TICKER, period="2y", interval="1d")
 
 if not universe_data:
-    st.error("❌ Não foi possível baixar dados de nenhum ativo. Tente novamente.")
+    st.error("❌ Não foi possível obter cotações para os ativos selecionados. Tente novamente.")
     st.stop()
 
 if benchmark_data.empty:
-    st.error("❌ Não foi possível baixar dados do benchmark (IBOV).")
+    st.error("❌ Não foi possível obter dados do benchmark Ibovespa (^BVSP).")
     st.stop()
-
-st.success(f"✅ {len(universe_data)} ativos carregados com sucesso.")
 
 # ── 3. Análise Macro (Nível 1) ──
 macro = analyze_macro(universe_data, benchmark_data=benchmark_data)
 
 # ── 4. Análise Setorial (Nível 2) ──
-# Construir proxy setorial equal-weighted
 sector_prices = build_sector_proxy(universe_data, universe)
-
-# Converter para Series de Close para análise RS
 sector_close_series = {name: series for name, series in sector_prices.items()}
-
 sector_analysis = analyze_sectors(sector_close_series, benchmark_data["Close"])
 
-# Mapa de score setorial
 sector_score_map = {
     name: sr.score for name, sr in sector_analysis.sectors.items()
 }
@@ -257,7 +354,7 @@ sector_score_map = {
 # ── 5. Trend Engine (Nível 3) ──
 trend_results = batch_analyze_trends(universe_data)
 
-# ── 6. Scoring Final ──
+# ── 6. Scoring Final (Nível 4 + TQS Ponderado) ──
 final_scores = build_final_scores(
     universe_data=universe_data,
     ticker_sector_map=universe,
@@ -304,21 +401,22 @@ with tab1:
     st.divider()
 
     # Ranking Table
-    st.markdown(f"### 🏆 Top {top_n} — Ranking por Trend Quality Score (TQS)")
+    st.markdown(f"### 🏆 Top {min(top_n, len(scores_df))} — Ranking por Trend Quality Score (TQS)")
+    st.caption("Tabela com linhas de tons alternados para facilitar a leitura dos parâmetros operacionais de cada ativo:")
 
     if not scores_df.empty:
-        # Stats rápidas
+        # Stats rápidas em cards
         sc1, sc2, sc3, sc4 = st.columns(4)
         with sc1:
-            st.metric("Ativos Analisados", len(final_scores))
+            st.metric("Total Escaneado", f"{len(final_scores)} ativos")
         with sc2:
-            strong_buys = len([s for s in final_scores if s.status == "Compra Forte"])
+            strong_buys = len([s for s in final_scores if "Compra Forte" in s.status])
             st.metric("🟢 Compra Forte", strong_buys)
         with sc3:
             buys = len([s for s in final_scores if s.status == "Compra"])
             st.metric("🟡 Compra", buys)
         with sc4:
-            overbought = len([s for s in final_scores if s.status == "Sobrecomprado"])
+            overbought = len([s for s in final_scores if "Sobrecomprado" in s.status])
             st.metric("🔴 Sobrecomprado", overbought)
 
         render_ranking_table(scores_df, top_n=top_n)
@@ -327,26 +425,26 @@ with tab1:
         st.divider()
         render_tqs_distribution(scores_df)
     else:
-        st.warning("Nenhum ativo atendeu aos critérios de filtro.")
+        st.warning("Nenhum ativo atendeu ao corte de TQS configurado.")
 
 
 # ══════════════════════ TAB 2: DEEP DIVE ══════════════════════════
 
 with tab2:
     if not final_scores:
-        st.info("Execute o screener primeiro (aba Overview).")
+        st.info("Nenhum ativo disponível para análise com os filtros atuais.")
     else:
         # Seletor de ativo
-        ticker_options = [f"{s.ticker} (TQS: {s.tqs:.1f})" for s in final_scores]
+        ticker_options = [f"{s.ticker} — TQS: {s.tqs:.1f} ({s.sector})" for s in final_scores]
         selected_label = st.selectbox(
-            "Selecionar ativo para análise detalhada",
+            "Selecione um ativo para análise detalhada:",
             options=ticker_options,
             index=0,
             key="deepdive_select",
         )
 
         # Extrair ticker do label
-        selected_ticker = selected_label.split(" (")[0]
+        selected_ticker = selected_label.split(" — ")[0]
         selected_score = next((s for s in final_scores if s.ticker == selected_ticker), None)
         selected_trend = trend_results.get(selected_ticker)
 
@@ -356,7 +454,7 @@ with tab2:
             with col_left:
                 # Lookback selector
                 lookback = st.select_slider(
-                    "Período de visualização",
+                    "Janela de Visualização Histórica:",
                     options=[63, 126, 189, 252, 378, 504],
                     value=252,
                     format_func=lambda x: f"{x} dias (~{x // 21} meses)",
@@ -382,13 +480,13 @@ with tab2:
             st.warning(f"Dados insuficientes para {selected_ticker}.")
 
 
-# ═══════════════════ TAB 3: MATRIZ SETORIAL ═══════════════════════
+# ══════════════════════ TAB 3: MATRIZ SETORIAL ══════════════════════
 
 with tab3:
     st.markdown("### 🗺️ Matriz de Força Relativa Setorial")
     st.markdown(
-        "Dispersão de performance e ranking dos setores da B3 "
-        "baseado no RS Ratio vs. Ibovespa."
+        "Dispersão de performance e liderança dos setores da B3 "
+        "baseado na Força Relativa (RS Ratio vs. Ibovespa)."
     )
 
     render_sector_heatmap(
@@ -399,7 +497,7 @@ with tab3:
 
     # Top ações por setor
     st.divider()
-    st.markdown("### 📊 Melhores Ativos por Setor")
+    st.markdown("### 📊 Melhores Ativos por Setor Econômico")
 
     sectors_with_stocks = {}
     for s in final_scores:
@@ -408,7 +506,7 @@ with tab3:
         sectors_with_stocks[s.sector].append(s)
 
     if sectors_with_stocks:
-        # Ordenar setores pelo score médio
+        # Ordenar setores pelo score setorial
         sector_order = sorted(
             sectors_with_stocks.keys(),
             key=lambda sec: sector_score_map.get(sec, 0),
@@ -424,8 +522,8 @@ with tab3:
             emoji = "🟢" if rs_score >= 60 else "🟡" if rs_score >= 40 else "🔴"
 
             with st.expander(
-                f"{emoji} {sector_name} — RS Score: {rs_score:.0f} | {len(stocks)} ativos",
+                f"{emoji} {sector_name} — RS Score: {rs_score:.0f}/100 | {len(stocks)} ativos",
                 expanded=False,
             ):
                 sector_df = scores_to_dataframe(sorted(stocks, key=lambda s: s.tqs, reverse=True))
-                st.dataframe(sector_df, use_container_width=True, hide_index=True, height=200)
+                render_ranking_table(sector_df, top_n=len(sector_df))
