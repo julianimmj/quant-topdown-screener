@@ -1,0 +1,117 @@
+name: Manter Streamlit Ativo
+
+on:
+  schedule:
+    # Executa a cada 4 horas para manter o app acordado no Streamlit Community Cloud
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Instalar Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Despertar Streamlit App (Navegador Headless)
+        run: |
+          python - << 'PYEOF'
+          import asyncio
+          import sys
+          from playwright.async_api import async_playwright
+
+          # ──────────────────────────────────────────────────────────
+          # Usa um navegador headless real (Chromium) para visitar
+          # o app Streamlit. Isso estabelece a conexão WebSocket
+          # que o Streamlit Cloud reconhece como sessão ativa,
+          # impedindo a hibernação do app.
+          # ──────────────────────────────────────────────────────────
+          APPS = [
+              'https://quant-topdown-screener.streamlit.app/',
+          ]
+
+          # Tempo em segundos que o navegador permanece na pagina
+          # para garantir que o Streamlit registre a sessao
+          STAY_SECONDS = 30
+
+
+          async def wake_app(browser, url):
+              """Abre o app em uma aba real do navegador e aguarda carregamento."""
+              print(f'\n{"="*60}')
+              print(f'App: {url}')
+              print(f'{"="*60}')
+
+              page = await browser.new_page()
+              try:
+                  # Navega para o app (segue todos os redirects automaticamente)
+                  print('[1/4] Navegando para o app...')
+                  response = await page.goto(url, wait_until='networkidle', timeout=120_000)
+                  print(f'  Status: {response.status if response else "N/A"}')
+                  print(f'  URL final: {page.url}')
+
+                  # Verifica se esta na tela de "waking up"
+                  print('[2/4] Verificando estado do app...')
+                  content = await page.content()
+                  content_lower = content.lower()
+
+                  if any(w in content_lower for w in ['please wait', 'waking up', 'booting up', 'app is booting']):
+                      print('  App esta despertando... aguardando ate 90s...')
+                      try:
+                          # Espera o app carregar completamente
+                          await page.wait_for_selector(
+                              'iframe[title="streamlitApp"], .stApp, [data-testid="stAppViewContainer"]',
+                              timeout=90_000
+                          )
+                          print('  App despertou com sucesso!')
+                      except Exception:
+                          print('  Timeout esperando despertar, verificando...')
+                          await page.wait_for_timeout(30_000)
+                  
+                  # Permanece na pagina para registrar sessao ativa
+                  print(f'[3/4] Mantendo sessao ativa por {STAY_SECONDS}s...')
+                  await page.wait_for_timeout(STAY_SECONDS * 1000)
+
+                  # Verificacao final
+                  print('[4/4] Verificacao final...')
+                  final_title = await page.title()
+                  print(f'  Titulo: {final_title}')
+                  print(f'  URL: {page.url}')
+                  print(f'  RESULTADO: App visitado com sucesso!')
+                  return True
+
+              except Exception as e:
+                  print(f'  ERRO: {e}')
+                  return False
+              finally:
+                  await page.close()
+
+
+          async def main():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True)
+                  
+                  success = 0
+                  fail = 0
+                  
+                  for url in APPS:
+                      ok = await wake_app(browser, url)
+                      if ok:
+                          success += 1
+                      else:
+                          fail += 1
+                  
+                  await browser.close()
+              
+              print(f'\n{"="*60}')
+              print(f'Resumo: {success} sucesso(s), {fail} falha(s)')
+              print(f'{"="*60}')
+              
+              if fail > 0:
+                  sys.exit(1)
+
+
+          asyncio.run(main())
+          PYEOF
