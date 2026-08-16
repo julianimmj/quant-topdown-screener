@@ -232,19 +232,19 @@ with st.sidebar:
     universe_option = st.selectbox(
         "Selecione o Universo",
         options=[
-            f"Ibovespa Líquido ({len(IBOV_UNIVERSE)} ativos)",
             f"Universo Amplo B3 ({len(IBOV_UNIVERSE) + len(SMALL_CAPS)} ativos)",
+            f"Ibovespa Líquido ({len(IBOV_UNIVERSE)} ativos)",
             f"Small & Mid Caps ({len(SMALL_CAPS)} ativos)",
         ],
         index=0,
-        help="Escolha o conjunto de tickers auditados para escanear.",
+        help="Escolha o conjunto de tickers auditados para escanear. Por padrão, o Universo Amplo abrange tanto o Ibovespa quanto as principais Small Caps.",
         key="universe_select",
     )
 
-    if "Ibovespa Líquido" in universe_option:
-        selected_universe = "ibov"
-    elif "Universo Amplo" in universe_option:
+    if "Universo Amplo" in universe_option:
         selected_universe = "amplo"
+    elif "Ibovespa Líquido" in universe_option:
+        selected_universe = "ibov"
     else:
         selected_universe = "smallcaps"
 
@@ -266,25 +266,45 @@ with st.sidebar:
     w_macro = st.slider(
         "Macro (Regime / Breadth)",
         0.0, 1.0, DEFAULT_WEIGHTS["macro"], 0.05,
-        help="Peso do regime macro e da saúde geral do mercado no score final.",
+        help=(
+            "🌐 Nível 1 • Macro (Regime / Breadth):\n\n"
+            "• O que mede: A saúde estrutural da bolsa (% de ações acima das SMA 50 e 200, correlações e regime de mercado).\n\n"
+            "🔼 Aumentar peso: Torna o screener mais conservador e dependente do mercado como um todo. Ativos só atingem scores de topo se a bolsa estiver em regime de alta saudável.\n\n"
+            "🔽 Diminuir peso: Reduz a dependência do cenário macro geral, focando na força individual do ativo e do setor. Útil para encontrar papéis descorrelacionados mesmo em momentos de cautela do Ibovespa."
+        ),
         key="w_macro",
     )
     w_setor = st.slider(
         "Força Relativa Setorial",
         0.0, 1.0, DEFAULT_WEIGHTS["setor"], 0.05,
-        help="Peso da liderança do setor econômico vs. o Ibovespa.",
+        help=(
+            "🏢 Nível 2 • Força Relativa Setorial (RS):\n\n"
+            "• O que mede: A liderança e momentum do setor econômico vs. o Ibovespa (RS > SMA 50 e ROC 63d/126d).\n\n"
+            "🔼 Aumentar peso: Prioriza a rotação setorial institucional. Ações pertencentes aos setores líderes (Top Performers) ganham grande destaque no ranking, penalizando papéis em setores fracos.\n\n"
+            "🔽 Diminuir peso: Permite capturar ações individuais fortes e descoladas mesmo que o setor como um todo esteja atrasado ou em consolidação."
+        ),
         key="w_setor",
     )
     w_trend = st.slider(
         "Trend Quality Engine",
         0.0, 1.0, DEFAULT_WEIGHTS["trend"], 0.05,
-        help="Peso da estrutura direcional, momentum e eficiência do papel.",
+        help=(
+            "📈 Nível 3 • Trend Quality Engine:\n\n"
+            "• O que mede: A persistência técnica e eficiência da tendência do ativo (Alinhamento de médias móveis, Slope SMA 50, ADX & DI, Kaufman ER e Vol-Adj ROC).\n\n"
+            "🔼 Aumentar peso: Enfatiza a solidez da tendência de médio/longo prazo. Filtra ruídos passageiros e seleciona papéis com estruturas de alta fortes e consolidadas.\n\n"
+            "🔽 Diminuir peso: Reduz a exigência de histórico prolongado de tendência, dando mais relevância a gatilhos imediatos de curto prazo ou ao momento setorial."
+        ),
         key="w_trend",
     )
     w_trigger = st.slider(
         "Gatilho & Anti-Exaustão",
         0.0, 1.0, DEFAULT_WEIGHTS["trigger"], 0.05,
-        help="Peso do timing e filtro contra compras em topos esticados.",
+        help=(
+            "🎯 Nível 4 • Gatilho & Anti-Exaustão:\n\n"
+            "• O que mede: O timing de entrada no curto prazo (pullback saudável na EMA 9/21, RSI 45-70 e filtro anti-exaustão contra compras esticadas longe da média).\n\n"
+            "🔼 Aumentar peso: Prioriza o ponto de entrada ideal e imediato. Ideal para swing trade que busca ativos prontos para disparo com risco calibrado.\n\n"
+            "🔽 Diminuir peso: Foca na qualidade estrutural da tendência do papel e do setor, tolerando ativos que estejam temporariamente esticados ou em consolidação lateral."
+        ),
         key="w_trigger",
     )
 
