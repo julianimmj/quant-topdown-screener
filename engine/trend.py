@@ -207,9 +207,13 @@ def compute_kaufman_efficiency_ratio(
     close: pd.Series,
     period: int = 21,
 ) -> tuple[float, float]:
-    """Calcula o Kaufman Efficiency Ratio (ER).
+    """Calcula o Kaufman Efficiency Ratio (ER) com ajuste direcional contínuo.
 
     ER = |Close_t - Close_{t-n}| / Σ|Close_i - Close_{i-1}|
+
+    - Tendência de alta limpa (ER alto + variação positiva): pontuação de 5.0 a 20.0 pts.
+    - Consolidação/Ruído: pontuação neutra em torno de 4.0 - 6.0 pts.
+    - Tendência de baixa (variação negativa): pontuação proporcionalmente penalizada entre 0.0 e 5.0 pts.
 
     Returns:
         (er_value, score 0-20)
@@ -217,28 +221,29 @@ def compute_kaufman_efficiency_ratio(
     if len(close) < period + 1:
         return 0.0, 0.0
 
-    # Deslocamento direcional (sinal)
-    direction = abs(close.iloc[-1] - close.iloc[-period - 1])
+    # Deslocamento direcional COM SINAL (net change)
+    net_diff = float(close.iloc[-1] - close.iloc[-period - 1])
+    direction = abs(net_diff)
 
     # Soma dos movimentos absolutos (ruído)
-    volatility = close.diff().abs().tail(period).sum()
+    volatility = float(close.diff().abs().tail(period).sum())
 
     if volatility == 0:
         return 0.0, 0.0
 
-    er = direction / volatility
+    raw_er = float(direction / volatility)
+    is_positive_trend = (net_diff >= 0)
 
-    # Score: 0-20
-    # ER >= 0.40 → começa a pontuar, ER = 1.0 = máximo
-    if er < 0.20:
-        score = 0.0
-    elif er < 0.40:
-        score = (er - 0.20) / 0.20 * 8  # 0-8 pts
+    # Score Contínuo e Direcional (0 a 20 pts)
+    if is_positive_trend:
+        # Em alta: 5.0 (base neutra) até 20.0 (eficiência máxima sem ruído)
+        score = 5.0 + np.clip((raw_er / 0.60) * 15.0, 0.0, 15.0)
     else:
-        score = 8.0 + (er - 0.40) / 0.60 * 12  # 8-20 pts
+        # Em baixa: penalizado entre 0.0 e 5.0 (quanto mais eficiente a queda, menor a nota para compra)
+        score = np.clip(5.0 * (1.0 - raw_er), 0.0, 5.0)
 
-    score = min(20.0, score)
-    return float(er), score
+    score = float(np.clip(score, 0.0, 20.0))
+    return float(raw_er), score
 
 
 def compute_vol_adj_roc(
