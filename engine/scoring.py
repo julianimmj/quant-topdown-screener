@@ -22,8 +22,8 @@ import pandas as pd
 DEFAULT_WEIGHTS: dict[str, float] = {
     "macro": 0.20,
     "setor": 0.20,
-    "trend": 0.45,
-    "trigger": 0.15,
+    "trend": 0.20,
+    "trigger": 0.40,
 }
 
 

@@ -221,8 +221,8 @@ with st.sidebar:
         
         * **🌐 Nível 1 • Macro (Default 20%):** Amplitude de mercado (% acima de SMA 50 e 200). Protege o portfólio em regimes defensivos.
         * **🏢 Nível 2 • Setor RS (Default 20%):** Força Relativa do setor vs. Ibovespa ($\text{RS} > \text{SMA}_{50}$ e ROC 63d/126d).
-        * **📈 Nível 3 • Trend Engine (Default 45%):** Alinhamento EMA, Slope SMA50, ADX $\ge 25$, Kaufman ER $\ge 0.40$ e Vol-Adj ROC.
-        * **🎯 Nível 4 • Trigger (Default 15%):** Anti-exaustão ($\text{Dist. SMA20} \le 2.2\text{ ATR}$), RSI(14) 45-70 e Pullback.
+        * **📈 Nível 3 • Trend Engine (Default 20%):** Alinhamento EMA, Slope SMA50, ADX $\ge 25$, Kaufman ER e Vol-Adj ROC.
+        * **🎯 Nível 4 • Trigger (Default 40%):** Anti-exaustão ($\text{Dist. SMA20} \le 2.2\text{ ATR}$), RSI(14) 45-70 e Pullback na EMA 9/21.
         """)
 
     st.divider()
@@ -542,7 +542,7 @@ with tab2:
                 render_rsi_chart(selected_ticker, universe_data[selected_ticker], lookback_days=lookback)
 
             with col_right:
-                render_score_decomposition(selected_score)
+                render_score_decomposition(selected_score, weights=weights)
         else:
             st.warning(f"Dados insuficientes para {selected_ticker}.")
 

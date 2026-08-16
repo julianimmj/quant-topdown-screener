@@ -295,10 +295,19 @@ def render_ranking_table(
     st_html(table_html)
 
 
-def render_score_decomposition(score: FinalScore) -> None:
+def render_score_decomposition(score: FinalScore, weights: dict[str, float] = None) -> None:
     """Renderiza decomposição detalhada dos sub-scores de um ativo com layout responsivo e fontes balanceadas."""
     st.markdown(f"### 🔍 Decomposição Quantitativa — `{score.ticker}`")
     st.markdown(f"**Setor Econômico:** {score.sector} | **Último Fechamento:** R$ {score.price:.2f}")
+
+    # Ponderações ativas
+    if weights is None:
+        w_macro, w_setor, w_trend, w_trigger = 0.20, 0.20, 0.20, 0.40
+    else:
+        w_macro = weights.get("macro", 0.20)
+        w_setor = weights.get("setor", 0.20)
+        w_trend = weights.get("trend", 0.20)
+        w_trigger = weights.get("trigger", 0.40)
 
     # Cabeçalho do Gauge TQS
     st_html("""
@@ -380,8 +389,8 @@ def render_score_decomposition(score: FinalScore) -> None:
         <!-- Macro -->
         <div style="margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
-                <span style="color: #CCD6F6; font-weight: 600;">Nível 1 • Macro (20%)</span>
-                <span style="color: {macro_col}; font-weight: 700;">{score.macro_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×20% = {score.macro_score * 0.20:.1f})</span></span>
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 1 • Macro ({w_macro:.0%})</span>
+                <span style="color: {macro_col}; font-weight: 700;">{score.macro_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×{w_macro:.0%} = {score.macro_score * w_macro:.1f})</span></span>
             </div>
             <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
                 <div style="width: {score.macro_score}%; height: 100%; background: linear-gradient(90deg, {macro_col}80, {macro_col}); border-radius: 4px;"></div>
@@ -391,8 +400,8 @@ def render_score_decomposition(score: FinalScore) -> None:
         <!-- Setor RS -->
         <div style="margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
-                <span style="color: #CCD6F6; font-weight: 600;">Nível 2 • Setor RS (20%)</span>
-                <span style="color: {sec_col}; font-weight: 700;">{score.sector_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×20% = {score.sector_score * 0.20:.1f})</span></span>
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 2 • Setor RS ({w_setor:.0%})</span>
+                <span style="color: {sec_col}; font-weight: 700;">{score.sector_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×{w_setor:.0%} = {score.sector_score * w_setor:.1f})</span></span>
             </div>
             <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
                 <div style="width: {score.sector_score}%; height: 100%; background: linear-gradient(90deg, {sec_col}80, {sec_col}); border-radius: 4px;"></div>
@@ -402,8 +411,8 @@ def render_score_decomposition(score: FinalScore) -> None:
         <!-- Trend -->
         <div style="margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
-                <span style="color: #CCD6F6; font-weight: 600;">Nível 3 • Trend Quality (45%)</span>
-                <span style="color: {trend_col}; font-weight: 700;">{score.trend_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×45% = {score.trend_score * 0.45:.1f})</span></span>
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 3 • Trend Quality ({w_trend:.0%})</span>
+                <span style="color: {trend_col}; font-weight: 700;">{score.trend_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×{w_trend:.0%} = {score.trend_score * w_trend:.1f})</span></span>
             </div>
             <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
                 <div style="width: {score.trend_score}%; height: 100%; background: linear-gradient(90deg, {trend_col}80, {trend_col}); border-radius: 4px;"></div>
@@ -413,8 +422,8 @@ def render_score_decomposition(score: FinalScore) -> None:
         <!-- Trigger -->
         <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.82rem;">
-                <span style="color: #CCD6F6; font-weight: 600;">Nível 4 • Trigger (15%)</span>
-                <span style="color: {trig_col}; font-weight: 700;">{score.trigger_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×15% = {score.trigger_score * 0.15:.1f})</span></span>
+                <span style="color: #CCD6F6; font-weight: 600;">Nível 4 • Trigger ({w_trigger:.0%})</span>
+                <span style="color: {trig_col}; font-weight: 700;">{score.trigger_score:.0f} pts <span style="color: #8892B0; font-size: 0.75rem;">(×{w_trigger:.0%} = {score.trigger_score * w_trigger:.1f})</span></span>
             </div>
             <div style="width: 100%; height: 8px; background: #1C222E; border-radius: 4px; overflow: hidden;">
                 <div style="width: {score.trigger_score}%; height: 100%; background: linear-gradient(90deg, {trig_col}80, {trig_col}); border-radius: 4px;"></div>
