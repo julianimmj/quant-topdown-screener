@@ -18,7 +18,7 @@ import yfinance as yf
 logger = logging.getLogger(__name__)
 
 
-@st.cache_data(ttl=3600, show_spinner="Baixando dados de mercado…")
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ohlcv(
     tickers: list[str],
     period: str = "2y",
@@ -55,7 +55,7 @@ def fetch_ohlcv(
                 interval=interval,
                 group_by="ticker",
                 auto_adjust=True,
-                threads=True,
+                threads=False,
                 progress=False,
             )
 
@@ -123,7 +123,7 @@ def fetch_ohlcv(
     return result
 
 
-@st.cache_data(ttl=3600, show_spinner="Baixando benchmark…")
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_benchmark(
     ticker: str = "^BVSP",
     period: str = "2y",
@@ -145,15 +145,31 @@ def fetch_benchmark(
             period=period,
             interval=interval,
             auto_adjust=True,
+            threads=False,
             progress=False,
         )
+        if data.empty and ticker == "^BVSP":
+            logger.warning("Benchmark ^BVSP vazio. Tentando fallback com BOVA11.SA...")
+            data = yf.download(
+                tickers="BOVA11.SA",
+                period=period,
+                interval=interval,
+                auto_adjust=True,
+                threads=False,
+                progress=False,
+            )
+
         if data.empty:
             st.error(f"❌ Não foi possível baixar dados do benchmark {ticker}.")
             return pd.DataFrame()
 
         # yfinance 1.2+ retorna MultiIndex (Price, Ticker) mesmo para 1 ticker
         if isinstance(data.columns, pd.MultiIndex):
-            data.columns = data.columns.droplevel("Ticker")
+            level_names = [str(n) for n in data.columns.names]
+            if "Ticker" in level_names:
+                data.columns = data.columns.droplevel("Ticker")
+            else:
+                data.columns = data.columns.droplevel(-1)
 
         data = data.dropna(how="all")
         required_cols = ["Open", "High", "Low", "Close", "Volume"]
@@ -167,11 +183,32 @@ def fetch_benchmark(
 
     except Exception as e:
         logger.error(f"Erro ao baixar benchmark {ticker}: {e}")
+        # Tenta fallback BOVA11.SA se falhou com exceção
+        try:
+            fallback_data = yf.download(
+                tickers="BOVA11.SA",
+                period=period,
+                interval=interval,
+                auto_adjust=True,
+                threads=False,
+                progress=False,
+            )
+            if not fallback_data.empty:
+                if isinstance(fallback_data.columns, pd.MultiIndex):
+                    level_names = [str(n) for n in fallback_data.columns.names]
+                    if "Ticker" in level_names:
+                        fallback_data.columns = fallback_data.columns.droplevel("Ticker")
+                    else:
+                        fallback_data.columns = fallback_data.columns.droplevel(-1)
+                fallback_data = fallback_data[required_cols].ffill(limit=5).dropna(subset=["Close"])
+                return fallback_data
+        except Exception:
+            pass
         st.error(f"❌ Erro ao baixar benchmark: {e}")
         return pd.DataFrame()
 
 
-@st.cache_data(ttl=3600, show_spinner="Baixando índices setoriais…")
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_sector_indices(
     sector_tickers: dict[str, str],
     period: str = "2y",

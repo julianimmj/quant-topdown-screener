@@ -15,9 +15,23 @@ Executar: streamlit run app.py
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import streamlit as st
 import pandas as pd
 import numpy as np
+
+
+@contextmanager
+def safe_spinner(text: str):
+    """Context manager resiliente para st.spinner no Streamlit Cloud / Python 3.14.
+    Evita que falhas de timer/thread causem interrupção fatal por RuntimeError.
+    """
+    try:
+        with st.spinner(text):
+            yield
+    except RuntimeError:
+        st.info(text)
+        yield
 
 # ── Page Config ──
 st.set_page_config(
@@ -385,7 +399,7 @@ if not ticker_list:
     st.stop()
 
 # ── 2. Fetch dados com Spinner ──
-with st.spinner(f"📥 Coletando cotações de {len(ticker_list)} ativos da B3…"):
+with safe_spinner(f"📥 Coletando cotações de {len(ticker_list)} ativos da B3…"):
     universe_data = fetch_ohlcv(ticker_list, period="2y", interval="1d")
     benchmark_data = fetch_benchmark(BENCHMARK_TICKER, period="2y", interval="1d")
 
