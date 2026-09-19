@@ -55,7 +55,7 @@ def fetch_ohlcv(
                 interval=interval,
                 group_by="ticker",
                 auto_adjust=True,
-                threads=False,
+                threads=4,
                 progress=False,
             )
 
