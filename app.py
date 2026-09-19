@@ -384,10 +384,18 @@ if not ticker_list:
     st.error("Nenhum ticker selecionado. Selecione um universo no menu lateral.")
     st.stop()
 
-# ── 2. Fetch dados com Spinner ──
-with st.spinner(f"📥 Coletando cotações de {len(ticker_list)} ativos da B3…"):
+# ── 2. Fetch dados ──
+_status_msg = st.empty()
+_status_msg.info(f"📥 Coletando cotações de {len(ticker_list)} ativos da B3…")
+try:
     universe_data = fetch_ohlcv(ticker_list, period="2y", interval="1d")
     benchmark_data = fetch_benchmark(BENCHMARK_TICKER, period="2y", interval="1d")
+except Exception as _fetch_err:
+    _status_msg.empty()
+    st.error(f"❌ Erro ao coletar cotações: {_fetch_err}")
+    st.stop()
+finally:
+    _status_msg.empty()
 
 if not universe_data:
     st.error("❌ Não foi possível obter cotações para os ativos selecionados. Tente novamente.")
